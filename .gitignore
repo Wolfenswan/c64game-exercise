@@ -77,3 +77,5 @@ crashlytics-build.properties
 /[Aa]ssets/SoundS
 /.vscode
 /Assets/TextMesh Pro
+/Assets/Samples
+/Assets/Notes.txt
