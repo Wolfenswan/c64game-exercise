@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MoveSpeed: 3
   SlideSpeed: 3
-  JumpSpeed: 1
   TimeToSlide: 0.25
   SlideDuration: 0.5
-  JumpPower: {x: 3, y: 5}
-  JumpMode: 1
+  JumpSpeed: 2
+  JumpVector: {x: 2, y: 3}
+  GravityVector: {x: 0, y: -2}
   DefaultLives: 5
   RespawnTime: 2

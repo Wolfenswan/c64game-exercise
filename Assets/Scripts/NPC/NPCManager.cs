@@ -66,11 +66,13 @@ public class NPCManager : MonoBehaviour
     void PlaceNPCatSpawn(GameObject NPC)
     {   
         var idx = UnityEngine.Random.Range(0, _spawnPositions.Count-1);
-        var tr = _spawnPositions[idx];
-        NPC.transform.position = (Vector2) tr.position;
-        NPC.GetComponent<EnemyController>().Facing = (int) tr.localScale.x; // Alternative: use an edgecollider2d in the spawn sprite so they'd turn around. But I kind of like this hacky solution.
+        var spawnTr = _spawnPositions[idx];
+        NPC.transform.position = (Vector2) spawnTr.position;
+        NPC.transform.localScale = spawnTr.localScale;
+        NPC.GetComponent<EnemyController>().Facing = (int) spawnTr.localScale.x; // Alternative: use an edgecollider2d in the spawn sprite so they'd turn around. But I kind of like this hacky solution.
     }
 
+    #region event reactions
     void GameManager_LevelChangeEvent(LevelData data) 
     {
         foreach (var item in _activeCoins)
@@ -99,5 +101,5 @@ public class NPCManager : MonoBehaviour
             PlaceNPCatSpawn(newCoin);
         }
     }
-    
+    #endregion
 }

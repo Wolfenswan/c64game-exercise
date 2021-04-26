@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour 
@@ -16,30 +18,31 @@ public class PlayerController : MonoBehaviour
     public static event Action<CoinController> CoinCollectedEvent;
     public static event Action<int, int> ScoreUpdatedEvent;
     public static event Action<int, int> LivesUpdatedEvent;
+    public event Action JumpEvent;
     
     
     [SerializeField] PlayerData _data;
     [SerializeField] GameObject _collisionDetection;
     public bool Debugging = true;
-
+    
     PlayerControls _playerControls;
     PlayerInput _playerInput;
     GFXController _gfxController;
     CollisionController _collisionController;
-    //Rigidbody2D _rb2d;
     Collider2D _mainCollider;
     StateMachine _stateMachine;
     Dictionary<CollisionType,bool> _collisions = new Dictionary<CollisionType,bool>();
 
+    #region public field accessors
+    public int Facing{get; private set;} = 1;
     public PlayerValues PlayerValues{get; private set;}
     public int MovementInput{get;private set;}
-    public bool JumpInput{get;private set;} = false;
-    public int Facing{get;private set;} = 1;
     public Vector2 Pos{get=>transform.position;}
     public bool IsPlayerFrozen{get;private set;}
     //public Rigidbody2D RB2D{get => _rb2d;}
     public PlayerData Data{get => _data;}    
     public PlayerStateID CurrentState{get => (PlayerStateID) _stateMachine.CurrentState.ID;}
+    #endregion
 
     #region collision detection shorthands
     public bool IsTouchingGround{get => _collisions[CollisionType.GROUND];}
@@ -51,6 +54,8 @@ public class PlayerController : MonoBehaviour
 
     int _collectionMultiplier = 1;
     bool _controlsEnabled = true;
+    bool _jumped = false;
+    Vector3 _moveVector = new Vector3(0f,0f,0f);
 
     struct PlayerAnimationHash
     {
@@ -91,17 +96,10 @@ public class PlayerController : MonoBehaviour
         ScoreUpdatedEvent?.Invoke(id, PlayerValues.Score);
     }
 
-    public void PlaceAtSpawn(Transform spawn)
-    {
-        transform.position = (Vector2) spawn.position;
-        Facing = (int) spawn.localScale.x;
-        StartCoroutine(SpawnFreeze());
-    }
-
     void Update() 
     {   
         //UpdateInput();
-        UpdateFacing();
+        //UpdateFacing();
         _collisions = _collisionController.UpdateCollisions(Facing);
 
         if (IsPlayerFrozen) // Prevent any state changes or input registration while frozen
@@ -117,19 +115,39 @@ public class PlayerController : MonoBehaviour
         
     }
 
-    void UpdateFacing()
+    #region movement and positioning
+    public void MoveStep(float x, float y)
     {
-        if (MovementInput != 0 && MovementInput != Facing)
-            Facing = MovementInput;
+        //var fallSpeed = _player.Data.GravityVector.y * Time.deltaTime; // TODO once the value is final, move to constructor or declare as field
+        _moveVector.Set(x, y, 0f);
+        transform.position += _moveVector;
     }
+
+    public void UpdateFacing(int newFacing)
+    {
+        if (Facing != newFacing)
+        {
+            Facing = newFacing;
+            transform.localScale.Set(newFacing,1,1);
+        }
+    }
+
+    public void PlaceAtSpawn(Transform spawn)
+    {
+        transform.position = (Vector2) spawn.position;
+        UpdateFacing((int) spawn.localScale.x);
+        StartCoroutine(SpawnFreeze());
+    }
+    #endregion
 
     #region input update - triggered by actions sent through Player Input component
     public void OnMove(InputAction.CallbackContext ctx) => MovementInput = _controlsEnabled?(int) ctx.action.ReadValue<float>():0;
-
-    public void OnJump(InputAction.CallbackContext ctx) 
-    {   
-        JumpInput = ctx.action.triggered;
-    }
+    //public void OnJump(InputAction.CallbackContext ctx) => JumpInput = _controlsEnabled?ctx.performed:false;
+    public void OnJump(InputAction.CallbackContext ctx)
+    {
+        if (_controlsEnabled && ctx.performed) JumpEvent?.Invoke();
+        _jumped = ctx.performed; // Only used by the RespawnFreeze
+    } 
     #endregion
 
     // TODO rework into trigger
@@ -223,16 +241,13 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator SpawnFreeze()
     {   
-        //yield return new WaitUntil(() => !(_rb2d != null));
-        //_rb2d.bodyType = RigidbodyType2D.Kinematic;
         _controlsEnabled = false;
         yield return new WaitForEndOfFrame(); // Prevents registering movement input right after joining
         _controlsEnabled = true;
         var tick = Time.time;
-        _stateMachine.ForceState(PlayerStateID.IDLE);
+        _stateMachine.ForceState(PlayerStateID.IDLE); // TODO streamline this section to reduce checks
         IsPlayerFrozen = true; // Frozen is checked in Idle-State and prevents any state-change i.e. movement
-        yield return new WaitUntil(() => (MovementInput != 0 || JumpInput || Time.time - tick > 2f));
-        //_rb2d.bodyType = RigidbodyType2D.Dynamic;
+        yield return new WaitUntil(() => (MovementInput != 0 || _jumped || Time.time - tick > 2f));
         IsPlayerFrozen = false;
         _mainCollider.enabled = true; // Disabled by the death-state
     }

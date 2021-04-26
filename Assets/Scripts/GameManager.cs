@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,7 +49,7 @@ public class GameManager : Singleton<GameManager>
 
     void Update() 
     {
-        InputSystem.Update();
+        
     }
 
     void PlayerManager_AllPlayersKilledEvent()
