@@ -7,12 +7,18 @@ public class EnemyFallState : EnemyState
 
     Vector3 _moveVector = new Vector3(0f,0f,0f);
 
+    public override void OnEnter(Enum fromState)
+    {
+        base.OnEnter(fromState);
+    }
+
     public override Enum Tick()
     {   
 
         var direction = _entity.Facing;
         var speed = _entity.Data.MoveSpeed; // TODO split into speed for x & y?
 
+        // TODO use gravity vector & use _entity.MoveStep();
         _moveVector.x = (speed * Time.deltaTime) * direction;
         _moveVector.y = (speed * Time.deltaTime) * -1;
         _entity.transform.position += _moveVector;

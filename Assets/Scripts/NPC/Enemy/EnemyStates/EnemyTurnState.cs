@@ -3,21 +3,41 @@ using UnityEngine;
 
 public class EnemyTurnState : EnemyState 
 {
+    bool _turnFinished;
+
     public EnemyTurnState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) {}
 
-    public override void OnEnter(Enum toState)
+    public override void OnEnter(Enum fromState)
     {
-        base.OnEnter(toState);
+        base.OnEnter(fromState);
 
         _entity.Facing *= -1;
         _entity.transform.localScale *= -1;
+
+        _turnFinished = false;
+
+        _gfxController.AnimationFinishedEvent += TurnFinished;
     }
 
     public override Enum Tick()
-    {
-        return EnemyStateID.MOVE;
+    {   
+        if (_turnFinished)
+            return EnemyStateID.MOVE;
+
+        if (_doFlip)
+            return EnemyStateID.FLIPPED;
+
+        return null;
     }
 
-    // TODO subscribe to AnimationFinishedEvent
-    // -> when done: change to MoveState
+    public override void OnExit(Enum toState)
+    {
+        base.OnExit(toState);
+        _gfxController.AnimationFinishedEvent -= TurnFinished;
+    }
+
+    void TurnFinished(int hash) 
+    {
+        if (hash == _animationHash) _turnFinished = true;
+    }
 }

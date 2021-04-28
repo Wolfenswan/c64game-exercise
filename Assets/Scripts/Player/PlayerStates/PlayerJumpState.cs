@@ -6,7 +6,6 @@ public class PlayerJumpState : PlayerState
     public PlayerJumpState(PlayerStateID id, PlayerController player, int animationHash) : base(id, player, animationHash){}
 
     Vector2 _velocityVector;
-    Vector2 _gravityVector;
 
     public override void OnEnter(Enum fromState)
     {
@@ -14,9 +13,8 @@ public class PlayerJumpState : PlayerState
 
         _velocityVector = _player.Data.JumpVector; // TODO move to constructor / field once finalized
         _velocityVector.x *= _player.Facing;
-        _gravityVector = _player.Data.GravityVector; // TODO move to constructor / field once finalized
 
-        if ((PlayerStateID) fromState == PlayerStateID.IDLE && _player.MovementInput == 0)
+        if (((PlayerStateID) fromState == PlayerStateID.IDLE || (PlayerStateID) fromState == PlayerStateID.SPAWN) && _player.MovementInput == 0)
             _velocityVector.x = 0f;
     }
 

@@ -26,13 +26,20 @@ public class NPCManager : MonoBehaviour
 
     void OnEnable() 
     {
+        PlayerController.EnemyFlipEvent += PlayerController_EnemyFlipEvent;
+        PlayerController.EnemyKillEvent += PlayerController_EnemyKillEvent;
+
         GameManager.Instance.LevelChangeEvent += GameManager_LevelChangeEvent;
         GameManager.Instance.LevelStartedEvent += GameManager_LevelStartedEvent;
     }
 
     void OnDisable() 
     {
-        
+        PlayerController.EnemyFlipEvent -= PlayerController_EnemyFlipEvent;
+        PlayerController.EnemyKillEvent -= PlayerController_EnemyKillEvent;
+
+        GameManager.Instance.LevelChangeEvent -= GameManager_LevelChangeEvent;
+        GameManager.Instance.LevelStartedEvent -= GameManager_LevelStartedEvent;
     }
 
     IEnumerator SpawnLoop(int levelID) // Starts once the GameManager raises the LevelStartedEvent
@@ -53,14 +60,12 @@ public class NPCManager : MonoBehaviour
 
                 EnemyController ec = newEnemy.GetComponent<EnemyController>();
                 _activeEnemies.Add(ec);
-                ec.EnemyDeadEvent += EnemyController_EnemyDeadEvent;   
 
                 enemy.Count -= 1;
                 if (enemy.Count == 0)
                     _enemiesToSpawn.Remove(_enemiesToSpawn[idx]);
             }     
-        }
-        
+        }     
     }
 
     void PlaceNPCatSpawn(GameObject NPC)
@@ -73,6 +78,18 @@ public class NPCManager : MonoBehaviour
     }
 
     #region event reactions
+    void PlayerController_EnemyFlipEvent(EnemyController enemyHit)
+    {
+        var ec = _activeEnemies.Find(ec => ec == enemyHit);
+        ec.OnFlip();
+    }
+
+    void PlayerController_EnemyKillEvent(EnemyController enemyHit)
+    {   
+        var ec = _activeEnemies.Find(ec => ec == enemyHit);
+        ec.OnDead();
+    }
+
     void GameManager_LevelChangeEvent(LevelData data) 
     {
         foreach (var item in _activeCoins)

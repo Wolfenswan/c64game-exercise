@@ -1,11 +1,12 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NEINGames.Extensions;
 public enum RaycastDirection 
 {
-    FACING,
-    BACKWARD,
+    RIGHT,
+    LEFT,
     DOWNWARD,
     UPWARD,
 }
@@ -20,7 +21,7 @@ public enum RequiredCollisionCount
 
 // TODO Instead of using debug rays -> OnDrawGizmos() https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnDrawGizmos.html
 [RequireComponent (typeof(EdgeCollider2D))]
-public class RaycasterGroup : MonoBehaviour 
+public class RaycasterGroup : MonoBehaviour
 {
     [SerializeField] public CollisionType CollisionType;
     [SerializeField] RequiredCollisionCount _requiredCollisionCount;
@@ -29,14 +30,17 @@ public class RaycasterGroup : MonoBehaviour
     [SerializeField] EdgeCollider2D _bounds;
     [SerializeField] float _distance = 0.15f;
     [SerializeField] int _numberOfRays = 4;
+    [SerializeField][Tooltip("Ignore contacts with the gameobject this raycaster group is attached to.")] bool _filterSelf;
     [SerializeField] bool _showDebugRays = false;
     [SerializeField] Color _debugRayColor = Color.green;
 
     // The public list contains all actual collisions from the last check. It is rarely accessed from outside. The best example is clinging to ledges, which requires knowledge of the corner's position.
     public List<RaycastHit2D> LastCollisions{get; private set;} = new List<RaycastHit2D>(); // Returns all collisions since the last check
     List<RaycastHit2D> _raycasts = new List<RaycastHit2D>(); // The private member is cleared and refilled each check, containing all rays casts (both hits and non-collisions)
+    
+    [NonSerialized] public GameObject Parent; // Only used to filter hits with the parent gameobject
 
-    public bool CheckCollision(int entityFacing) 
+    public bool CheckCollision() 
     {
         LastCollisions.Clear();
 
@@ -47,7 +51,7 @@ public class RaycasterGroup : MonoBehaviour
 
         // Calculate the required spacing between each ray
         float raySpacing;
-        bool horizontalRayCast = (_direction.Equals(RaycastDirection.FACING) || _direction.Equals(RaycastDirection.BACKWARD))?true:false;
+        bool horizontalRayCast = (_direction.Equals(RaycastDirection.RIGHT) || _direction.Equals(RaycastDirection.LEFT))?true:false;
 
         // If the beam is sent off in any horizontal direction, the origins need to be offset on the y-axis and vice versa
         if (horizontalRayCast)
@@ -60,11 +64,11 @@ public class RaycasterGroup : MonoBehaviour
         Vector2 raycastDirection = Vector2.zero;
         switch (_direction) 
         {
-            case RaycastDirection.FACING:
-                raycastDirection = Vector2.right * entityFacing;
+            case RaycastDirection.RIGHT:
+                raycastDirection = Vector2.right;
                 break;
-            case RaycastDirection.BACKWARD:
-                raycastDirection = Vector2.right * entityFacing * -1;
+            case RaycastDirection.LEFT:
+                raycastDirection = Vector2.left;
                 break;
             case RaycastDirection.DOWNWARD:
                 raycastDirection = Vector2.down;
@@ -93,21 +97,26 @@ public class RaycasterGroup : MonoBehaviour
             if (_showDebugRays)
             {   
                 var color = hit?Color.red:_debugRayColor;
+
+                if (_filterSelf)
+                    color = (hit && hit.collider.gameObject != Parent)?Color.red:_debugRayColor;
+
                 Debug.DrawRay(origin, raycastDirection * _distance, color, debugRayDuration);
             }
-
             _raycasts.Add(hit);
         }
 
         // Copy all actual collisions to the public List
         // by copying it after the fact (instead of filling it during the loop), no partially filled List can be accessed
-        LastCollisions = _raycasts.Where(c => c == true).ToList();
+        if (!_filterSelf)
+            LastCollisions = _raycasts.Where(c => c == true).ToList();
+        else
+            LastCollisions = _raycasts.Where(c => c == true && c.collider.gameObject != Parent).ToList();
 
         // Finally return true or false, depending on the required collision count
         // For the simple collision counts (one, half full) this method would be overkill and the collisions could simply be counted during the loop above
         // However, the special counts (e.g. lower half) need to know all collisions in their respective order
         int collisionCount = LastCollisions.Count();
-        
         if (collisionCount == 0)
             return false;
 

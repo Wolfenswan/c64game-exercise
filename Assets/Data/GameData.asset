@@ -9,13 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 74960527b63b43849b957e4056cee169, type: 3}
-  m_Name: PlayerData
+  m_Script: {fileID: 11500000, guid: de7b81b8c5c1dc14782c53a021f87000, type: 3}
+  m_Name: GameData
   m_EditorClassIdentifier: 
-  MoveSpeed: 3
-  TimeToSlide: 0.25
-  SlideDuration: 0.5
-  JumpSpeed: 2
-  JumpVector: {x: 2, y: 4}
-  DefaultLives: 5
-  RespawnTime: 2
+  SpawnDelay: 20
+  GravityVector: {x: 0, y: -5}

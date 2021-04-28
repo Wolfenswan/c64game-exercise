@@ -6,7 +6,10 @@ public enum CollisionType
 {
     GROUND,
     CEILING,
-    ENTITY,
+    ENTITY_LEFT,
+    ENTITY_RIGHT,
+    PLAYER_LEFT,
+    PLAYER_RIGHT,
     ENEMY_ABOVE,
     COIN_ABOVE,
 }
@@ -17,31 +20,32 @@ public class CollisionController : MonoBehaviour {
     List<RaycasterGroup> _raycasterGroups = new List<RaycasterGroup> {};
     RaycasterGroup _enemyRaycaster = null;
 
-    // TODO DRYness automatically generate the dictionary using the CollisionType enum
-    Dictionary<CollisionType,bool> _collisionDict = new Dictionary<CollisionType,bool>()
-    {
-        {CollisionType.GROUND, false},
-        {CollisionType.CEILING, false},
-        {CollisionType.ENEMY_ABOVE, false},
-    };
+    Dictionary<CollisionType,bool> _collisionDict = new Dictionary<CollisionType,bool>(){};
 
-    void Start() 
-    {
+    public GameObject AttachedTo {get => transform.parent.gameObject;}
+    public bool Initialized{get; set;} = false;
+
+    void Awake() 
+    {       
             foreach(Transform child in transform)
             {
                 if (child.GetComponent<RaycasterGroup>() != null && child.gameObject.activeSelf) 
-                {
+                {   
                     RaycasterGroup raycasterGroup = child.GetComponent<RaycasterGroup>();
+                    _collisionDict.Add(raycasterGroup.CollisionType, false);
+                    raycasterGroup.Parent = AttachedTo;
                     _raycasterGroups.Add(raycasterGroup);
                 }
             }
+
+            Initialized = true;
     }
 
-    public Dictionary<CollisionType,bool> UpdateCollisions(int entityFacing) 
+    public Dictionary<CollisionType,bool> UpdateCollisions() 
     {
         foreach (var rcGroup in _raycasterGroups)
-        {
-            bool doesCollide = rcGroup.CheckCollision(entityFacing);
+        {   
+            bool doesCollide = rcGroup.CheckCollision();
             _collisionDict[rcGroup.CollisionType] = doesCollide;
         }
 
@@ -78,7 +82,7 @@ public class CollisionController : MonoBehaviour {
         List<GameObject> hits = new List<GameObject>();
         foreach (var item in raycaster.LastCollisions)
         {
-            hits.Add(item.rigidbody.gameObject);
+            hits.Add(item.collider.gameObject);
         }
         return hits;
     }

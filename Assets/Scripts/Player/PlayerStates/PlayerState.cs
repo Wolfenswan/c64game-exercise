@@ -7,9 +7,9 @@ public abstract class PlayerState : State
     protected readonly GFXController _gfxController;
     private readonly int? _animationHash;
 
-    protected bool _executeJump;
-    private Vector3 _fallVector;
-    private Vector3 _moveVector;
+    protected bool _doJump;
+    protected bool _animFinished;
+    protected private Vector2 _gravityVector;
 
     public PlayerState(PlayerStateID id, PlayerController player, int? baseAnimationHash = null) 
     {   
@@ -19,25 +19,28 @@ public abstract class PlayerState : State
         _animationHash = baseAnimationHash;
     }
 
-    public override void OnEnter(Enum toState) 
+    public override void OnEnter(Enum fromState) 
     {
-        base.OnEnter(toState);
+        base.OnEnter(fromState);
 
-        _executeJump = false;
+        _gravityVector = GameManager.Instance.Data.GravityVector; // TODO move to constructor once final
+
+        _doJump = false;
         _player.JumpEvent += Player_JumpEvent;
+        _gfxController.AnimationFinishedEvent += GFX_AnimationFinishedEvent;
 
         if (_animationHash != null)
             _gfxController.ChangeAnimation((int) _animationHash);
             
     }
     
-    public override void OnExit(Enum fromState) 
+    public override void OnExit(Enum toState) 
     {
         _player.JumpEvent -= Player_JumpEvent;
+        _gfxController.AnimationFinishedEvent -= GFX_AnimationFinishedEvent;
     }
 
-    void Player_JumpEvent()
-    {
-        if(_player.IsTouchingGround) _executeJump = true;
-    }
+    void Player_JumpEvent() => _doJump = _player.IsTouchingGround || (PlayerStateID) ID == PlayerStateID.SPAWN;
+
+    void GFX_AnimationFinishedEvent(int hash) => _animFinished = hash == _animationHash;
 }

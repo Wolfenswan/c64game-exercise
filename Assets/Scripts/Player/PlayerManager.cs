@@ -26,8 +26,8 @@ public class PlayerManager : Singleton<PlayerManager>
 
     void OnEnable() 
     {
-        PlayerController.PlayerRespawnEvent += PlayerController_PlayerRespawnEvent;
-        PlayerController.PlayerDeadEvent += PlayerController_PlayerDeadEvent; //PlayerDeadEvent is fired once a player has lost all their lives
+        // PlayerController.PlayerRespawnEvent += PlayerController_PlayerRespawnEvent;
+        // PlayerController.PlayerDeadEvent += PlayerController_PlayerDeadEvent; //PlayerDeadEvent is fired once a player has lost all their lives
     }
 
     void Start() 
@@ -37,9 +37,8 @@ public class PlayerManager : Singleton<PlayerManager>
     
     void OnDisable() 
     {   
-        
-        PlayerController.PlayerRespawnEvent -= PlayerController_PlayerRespawnEvent;
-        PlayerController.PlayerDeadEvent -= PlayerController_PlayerDeadEvent;
+        // PlayerController.PlayerRespawnEvent -= PlayerController_PlayerRespawnEvent;
+        // PlayerController.PlayerDeadEvent -= PlayerController_PlayerDeadEvent;
 
         GameManager.Instance.LevelChangeEvent -= GameManager_LevelChangeEvent;
     }
@@ -56,6 +55,8 @@ public class PlayerManager : Singleton<PlayerManager>
         pc.InitializePlayer(id);
         _activePlayers.Add(id, pc);
         pc.PlaceAtSpawn(_playerSpawnPositions[id]);
+
+        SubscribeToPlayerEvents(pc);
     }
 
     // Called when changing to a new scene/level
@@ -69,8 +70,21 @@ public class PlayerManager : Singleton<PlayerManager>
         }
     }
 
-    public int GetPlayerScore(int id) => _activePlayers[id].PlayerValues.Score;
-    public int GetPlayerLives(int id) => _activePlayers[id].PlayerValues.Lives;
+    void SubscribeToPlayerEvents(PlayerController pc)
+    {
+        pc.PlayerRespawnEvent += Player_PlayerRespawnEvent;
+        pc.PlayerDeadEvent += Player_PlayerDeadEvent;
+        pc.MoveOtherPlayerEvent += Player_MoveOtherPlayerEvent;
+        pc.PlayerDisabledEvent += Player_PlayerDisabledEvent;
+    }
+
+    void DesubscribeFromPlayerEvents(PlayerController pc)
+    {
+        pc.PlayerRespawnEvent -= Player_PlayerRespawnEvent;
+        pc.PlayerDeadEvent -= Player_PlayerDeadEvent;
+        pc.MoveOtherPlayerEvent -= Player_MoveOtherPlayerEvent;
+        pc.PlayerDisabledEvent -= Player_PlayerDisabledEvent;
+    }
 
     void GameManager_LevelChangeEvent(LevelData data)
     {
@@ -79,17 +93,25 @@ public class PlayerManager : Singleton<PlayerManager>
         // SpawnPlayers()
     }
 
-    void PlayerController_PlayerRespawnEvent(PlayerController player) => player.PlaceAtSpawn(_playerRespawnPositions[player.PlayerValues.ID]);
+    void Player_MoveOtherPlayerEvent(Vector2 moveVector, PlayerController otherPlayer) => otherPlayer.MoveStep(moveVector.x, moveVector.y);
+
+    void Player_PlayerRespawnEvent(PlayerController player) => player.PlaceAtSpawn(_playerRespawnPositions[player.PlayerValues.ID]);
     
-    // Set players to their correct positions on LevelStartedEvent
-    void PlayerController_PlayerDeadEvent(PlayerController player)
+    void Player_PlayerDeadEvent(PlayerController player)
     {
+        player.gameObject.SetActive(false);
         _activePlayers.Remove(player.PlayerValues.ID);
-        
-        Destroy(player); // TODO tweak to see if its better to be set here or from PlayerController; also check if it registers with PlayerInput properly
-        // Other options: show continue? prompt on UI
+        //* Other options: show continue? prompt on UI
 
         if (_activePlayers.Count == 0)
             AllPlayersKilledEvent?.Invoke();
+    }
+
+    void Player_PlayerDisabledEvent (PlayerController pc)
+    {
+        DesubscribeFromPlayerEvents(pc);
+
+        // TODO test if object should be destroyed;
+        // needs testing how PlayerInput registers rejoining etc.
     }
 }

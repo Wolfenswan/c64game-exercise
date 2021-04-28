@@ -7,9 +7,9 @@ public class PlayerMoveState : PlayerState
 
     public PlayerMoveState(PlayerStateID id, PlayerController player, int animationHash) : base(id, player, animationHash) {}
     
-    public override void OnEnter(Enum toState)
+    public override void OnEnter(Enum fromState)
     {
-        base.OnEnter(toState);
+        base.OnEnter(fromState);
 
         _moveTimer = 0f;
     }
@@ -22,16 +22,16 @@ public class PlayerMoveState : PlayerState
     
         if(!_player.IsTouchingGround)
         {   
-            _player.MoveStep(moveSpeed * Time.deltaTime, _player.Data.GravityVector.y * Time.deltaTime);
+            _player.MoveStep(moveSpeed * Time.deltaTime * _player.Facing, _gravityVector.y * Time.deltaTime);
             _moveTimer = 0; // Player should not slide after falling from a move state
         } else
         {   
             _moveTimer += Time.deltaTime; // Not using _runTime, as fall should be excluded
             
-            if (_executeJump)
+            if (_doJump)
                 return PlayerStateID.JUMP;
             
-            if (direction == 0 && _moveTimer >= timeToSlide)
+            if (direction == 0 && _moveTimer >= timeToSlide && !_player.IsTouchingOtherPlayerFront)
                 return PlayerStateID.SLIDE;
             
             if (direction == 0)
@@ -40,7 +40,8 @@ public class PlayerMoveState : PlayerState
             if (direction != 0)
             {   
                 _player.UpdateFacing(direction);
-                _player.MoveStep((moveSpeed * Time.deltaTime) * direction, 0f);
+                if (!_player.IsTouchingOtherPlayerFront)
+                    _player.MoveStep((moveSpeed * Time.deltaTime) * direction, 0f);
             }
         }
 

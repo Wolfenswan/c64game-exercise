@@ -4,26 +4,25 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour 
 {   
-    public event Action<EnemyController> EnemyDeadEvent;    
+    public event Action EnemyFlipEvent;
+
     [SerializeField] EnemyData _data;
     [SerializeField] CollisionController _collisionController;
-
     [NonSerialized] public int Facing = 1;
     
     GFXController _gfxController;
     StateMachine _stateMachine;
     Dictionary<CollisionType,bool> _collisions = new Dictionary<CollisionType,bool>();
-
+    
+    // Public accessor to communicate if the current state gives points when flippings.
+    List<EnemyStateID> _givePointsInStates = new List<EnemyStateID>{EnemyStateID.MOVE, EnemyStateID.TURN};
+    public bool GivePointsOnFlip{get=>_givePointsInStates.Contains(CurrentStateID);}
+    
     public EnemyData Data{get => _data;}
-    public bool CanBeFlipped{get; private set;}
-    public bool IsFlipped{get; private set;}
+    public EnemyStateID CurrentStateID{get => (EnemyStateID) _stateMachine.CurrentState.ID;}
+    public bool IsFlipped{get => CurrentStateID == EnemyStateID.FLIPPED;}
     public bool IsTouchingGround{get=>_collisions[CollisionType.GROUND];}
-    public bool IsTouchingOtherEntity{get=>_collisions[CollisionType.ENTITY];}
-
-    //bool isGrounded
-
-    // Update
-    // Tick State
+    public bool IsFacingOtherEntity{get=>(Facing == 1 && _collisions[CollisionType.ENTITY_RIGHT]) || (Facing == -1 && _collisions[CollisionType.ENTITY_LEFT]);}
 
     void Awake() 
     {   
@@ -31,7 +30,8 @@ public class EnemyController : MonoBehaviour
         {
             new EnemyMoveState(EnemyStateID.MOVE, this, 0),
             new EnemyFallState(EnemyStateID.FALL, this, 1),
-            new EnemyTurnState(EnemyStateID.TURN, this, 2)
+            new EnemyFlippedState(EnemyStateID.FLIPPED, this, 2, 0),
+            new EnemyTurnState(EnemyStateID.TURN, this, 3)
         };
         _stateMachine = new StateMachine(states, EnemyStateID.MOVE);
 
@@ -40,52 +40,39 @@ public class EnemyController : MonoBehaviour
 
     void OnEnable() 
     {
-        PlayerController.EnemyFlipEvent += PlayerController_EnemyFlipEvent;
-        PlayerController.EnemyKillEvent += PlayerController_EnemyKillEvent;
     }
 
     void OnDisable() 
     {
-        PlayerController.EnemyFlipEvent -= PlayerController_EnemyFlipEvent;
-        PlayerController.EnemyKillEvent -= PlayerController_EnemyKillEvent;
     }
 
     void Update() 
     {
-        _collisions = _collisionController.UpdateCollisions(Facing);
+        _collisions = _collisionController.UpdateCollisions();
         _stateMachine.Tick(TickMode.UPDATE);
     }
 
-    void OnFlip()
-    {   
-        CanBeFlipped = false;
-        // Enforce Flipped State; maybe check for isFlipped and then have to States: FlipForward, FlipBackward
-        // Or easier: single flip state but with two additional animations: FlipForward, FlipBackward. Decide in OnEnter() which to play
-        // StartCoroutine or something? Or just handle everything in the flipped state?
-    }
-
-    void OnKilled()
+    public void MoveStep(float x, float y)
     {
-        EnemyDeadEvent?.Invoke(this);
-        // Enforce DeadState
-        // Disable gameObject after some time
+
     }
 
-    void PlayerController_EnemyFlipEvent(EnemyController enemyHit)
-    {
-        if (this != enemyHit)
-            return;
-
-        if (CanBeFlipped) // Probably redundant with check in PlayerController
-            OnFlip();
-    }
-
-    void PlayerController_EnemyKillEvent(EnemyController enemyHit)
+    public void IncreaseAnger()
     {   
-        if (this != enemyHit)
-            return;
+        // three anger levels: normal, blue color, red color
+        // increase movement speed
+        // change sprite color
+    }
 
-        OnKilled();
+    public virtual void OnFlip()
+    {   
+        // Replace with more advanced OnFlip in more complex enemies; e.g. flipping to different move state instead of flip on back            
+        EnemyFlipEvent?.Invoke();
+    }
+
+    public void OnDead()
+    {
+        // TODO force to die state (if it needs own state?)
     }
     
 }

@@ -11,12 +11,14 @@ public class GameManager : Singleton<GameManager>
     public event Action<LevelData> LevelChangeEvent;
     public event Action LevelStartedEvent;
 
+    [SerializeField] GameData _data;
     [SerializeField] List<LevelData> _levels = new List<LevelData>();
     [SerializeField] int _currentLevel = 1;
     
     NPCManager _npcManager;
     PlayerManager _playerManager;
 
+    public GameData Data{get => _data;}
     public LevelData CurrentLevelData{get => _levels.Single(data => data.LevelID == _currentLevel);}
 
     void Awake() 

@@ -4,4 +4,6 @@ using UnityEngine;
 public class EnemyData : ScriptableObject
 {
     public float MoveSpeed;
+    public float FlippedDuration;
+    public Vector2 FlipVector;
 }

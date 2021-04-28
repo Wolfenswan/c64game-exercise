@@ -12,11 +12,12 @@ public enum TickMode
 
 public class StateMachine 
 {
-    public State CurrentState {get => _currentState;}
     private State _currentState;
     private State _overrideOnNextTick;
     private Dictionary<Enum, State> _states = new Dictionary<Enum, State>();
     private bool _debug;
+    
+    public State CurrentState {get => _currentState;}
 
     public StateMachine(List<State> stateCollection, Enum startingState, bool debug = false) 
     {  
@@ -32,7 +33,7 @@ public class StateMachine
 
     public void Tick(TickMode tickMode)
     {   
-        if (_overrideOnNextTick != null) // Might need testing, if override should happen on all ticks or only Update()-Tick
+        if (_overrideOnNextTick != null) // Might need testing, if there's a benefit to override happening on all ticks or only on Update()-Tick
         {
             ChangeState(_overrideOnNextTick);
             _overrideOnNextTick = null;
@@ -70,8 +71,7 @@ public class StateMachine
                 ChangeState(newState);
             else if (newState == null) 
                 Debug.LogError($"StateMachine: Tried to change from {_currentState} to {newStateID}, but it is not in List of states:{_states}.");
-        }
-            
+        }  
     }
 
     public void ForceState(Enum id) 

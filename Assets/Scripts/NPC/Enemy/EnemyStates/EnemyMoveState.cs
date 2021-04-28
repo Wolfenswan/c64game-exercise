@@ -7,6 +7,11 @@ public class EnemyMoveState : EnemyState
 
     Vector3 _moveVector = new Vector3(0f,0f,0f);
 
+    public override void OnEnter(Enum fromState)
+    {
+        base.OnEnter(fromState);
+    }
+
     public override Enum Tick() 
     {   
         var direction = _entity.Facing;
@@ -18,7 +23,10 @@ public class EnemyMoveState : EnemyState
         if (!_entity.IsTouchingGround)
             return EnemyStateID.FALL;
 
-        if (_entity.IsTouchingOtherEntity)
+        if (_doFlip)
+            return EnemyStateID.FLIPPED;
+
+        if (_entity.IsFacingOtherEntity)
             return EnemyStateID.TURN;
         
         return null;
