@@ -13,11 +13,8 @@ public class EnemyPrefabContainer // Custom container to store both the enemy pr
 public class LevelData : ScriptableObject
 {   
     public int LevelID;
-    //public List<GameObject> EnemyList;
-    //[Tooltip("Prefab and number for each enemy.")] public DictionaryOfNumberedEnemyPrefabs EnemiesToSpawn;
-    //[Tooltip("Prefab and number for each enemy.")] public DictionaryOfInt Test;
     [Tooltip("Prefab and number for each enemy.")] public List<EnemyPrefabContainer> EnemiesToSpawn;
-    public bool BonusStage; // Maybe just set via GameManager?
+    public bool BonusStage; //* Maybe just set via GameManager each x levels?
 
-    // Maybe: Platform-color / sprite to use
+    //* Maybe: Platform-color / sprite to use
 }

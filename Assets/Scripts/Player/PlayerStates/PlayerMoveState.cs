@@ -22,7 +22,7 @@ public class PlayerMoveState : PlayerState
     
         if(!_player.IsTouchingGround)
         {   
-            _player.MoveStep(moveSpeed * Time.deltaTime * _player.Facing, _gravityVector.y * Time.deltaTime);
+            _player.MoveStep(moveSpeed * Time.deltaTime * (int) _player.Facing, _gravityVector.y * Time.deltaTime);
             _moveTimer = 0; // Player should not slide after falling from a move state
         } else
         {   

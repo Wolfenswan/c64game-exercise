@@ -10,6 +10,7 @@ public enum CollisionType
     ENTITY_RIGHT,
     PLAYER_LEFT,
     PLAYER_RIGHT,
+    PLAYER_DOWN,
     ENEMY_ABOVE,
     COIN_ABOVE,
 }
@@ -18,7 +19,6 @@ public class CollisionController : MonoBehaviour {
 
     [SerializeField] bool _debugLog = false;
     List<RaycasterGroup> _raycasterGroups = new List<RaycasterGroup> {};
-    RaycasterGroup _enemyRaycaster = null;
 
     Dictionary<CollisionType,bool> _collisionDict = new Dictionary<CollisionType,bool>(){};
 

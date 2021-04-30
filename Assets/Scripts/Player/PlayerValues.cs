@@ -4,15 +4,16 @@ using System;
 // PlayerValues can also easily be stored across scenes by using a Singleton-Manager
 public class PlayerValues
 {   
-    public static event Action<int, int> ScoreUpdatedEvent;
-    public static event Action<int, int> LivesUpdatedEvent;
+    public static event Action<int, int> ScoreUpdatedEvent; // Sends ID + current score
+    public static event Action<int, int> LivesUpdatedEvent; // Sends ID + current lives
 
-    public PlayerValues(int id, int lives, int score)
+    public PlayerValues(int id, int lives, int score, int bonusLiveTreshold)
     {
         ID = id;
         Lives = lives;
         Score = score;
-        NextLiveTreshold = 20000; // TODO use data
+        NextBonusLiveAt = bonusLiveTreshold;
+        _bonusLiveTreshold = bonusLiveTreshold;
 
         LivesUpdatedEvent?.Invoke(id, Lives);
         ScoreUpdatedEvent?.Invoke(id, Score);
@@ -21,7 +22,9 @@ public class PlayerValues
     public int ID{get;private set;}
     public int Lives{get; private set;}
     public int Score{get; private set;}
-    public int NextLiveTreshold{get; private set;}
+    public int NextBonusLiveAt{get; private set;}
+
+    public int _bonusLiveTreshold;
 
     public void UpdateScore(int points)
     {
@@ -29,10 +32,10 @@ public class PlayerValues
 
         ScoreUpdatedEvent.Invoke(ID, Score);
 
-        if (Score >= NextLiveTreshold)
+        if (Score >= NextBonusLiveAt)
         {
             AddOrRemoveLive(1);
-            NextLiveTreshold += 20000; // TODO use data
+            NextBonusLiveAt += _bonusLiveTreshold;
         }
     }
 

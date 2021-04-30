@@ -5,16 +5,30 @@ public class PlayerJumpState : PlayerState
 {   
     public PlayerJumpState(PlayerStateID id, PlayerController player, int animationHash) : base(id, player, animationHash){}
 
-    Vector2 _velocityVector;
+    Vector2 _velocityVector = new Vector2(0,0);
+    bool _wasBounced;
+
+    public void ReverseJumpDirection() 
+    {   
+        if (_wasBounced)
+            return;
+
+        _velocityVector.Set(_velocityVector.x * -1 , _velocityVector.y);
+
+        _wasBounced = true;
+    }
 
     public override void OnEnter(Enum fromState)
     {
         base.OnEnter(fromState);
 
-        _velocityVector = _player.Data.JumpVector; // TODO move to constructor / field once finalized
-        _velocityVector.x *= _player.Facing;
+        _wasBounced = false;
 
-        if (((PlayerStateID) fromState == PlayerStateID.IDLE || (PlayerStateID) fromState == PlayerStateID.SPAWN) && _player.MovementInput == 0)
+        _velocityVector = _player.Data.JumpVector; // TODO move to constructor / field once finalized
+        _velocityVector.x *= (int) _player.Facing;
+
+        //* NOTE: if bouncing from other player below the default x-vector might be a bit too strong. In that case check individually and apply a low x (maybe just velV.x * 0.5?)
+        if (!_player.IsTouchingOtherPlayerDown && ((PlayerStateID) fromState == PlayerStateID.IDLE || (PlayerStateID) fromState == PlayerStateID.SPAWN) && _player.MovementInput == 0)
             _velocityVector.x = 0f;
     }
 
@@ -32,7 +46,11 @@ public class PlayerJumpState : PlayerState
             if (_velocityVector.x == 0)
                 return PlayerStateID.IDLE;
             else
+            {
+                if (_wasBounced) _player.ReverseFacing();
                 return PlayerStateID.SLIDE;
+            }
+                
         }
 
         _player.transform.position = newPos;

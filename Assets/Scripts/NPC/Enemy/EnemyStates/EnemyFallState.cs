@@ -5,8 +5,6 @@ public class EnemyFallState : EnemyState
 {
     public EnemyFallState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) {}
 
-    Vector3 _moveVector = new Vector3(0f,0f,0f);
-
     public override void OnEnter(Enum fromState)
     {
         base.OnEnter(fromState);
@@ -14,15 +12,10 @@ public class EnemyFallState : EnemyState
 
     public override Enum Tick()
     {   
-
-        var direction = _entity.Facing;
-        var speed = _entity.Data.MoveSpeed; // TODO split into speed for x & y?
-
-        // TODO use gravity vector & use _entity.MoveStep();
-        _moveVector.x = (speed * Time.deltaTime) * direction;
-        _moveVector.y = (speed * Time.deltaTime) * -1;
-        _entity.transform.position += _moveVector;
-
+        var speedX = _entity.Data.MoveSpeed * Time.deltaTime * (int) _entity.Facing; // TODO move data-call to constructor once finalized
+        var speedY = _gravityVector.y * Time.deltaTime;
+        _entity.MoveStep(speedX, speedY);
+        
         if (_entity.IsTouchingGround)
             return EnemyStateID.MOVE;
         

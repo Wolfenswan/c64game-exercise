@@ -5,7 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 
-public class PlayerManager : Singleton<PlayerManager>
+public class PlayerManager : Singleton<PlayerManager> // TODO probably does not need to be a singleton
 {
     public event Action AllPlayersKilledEvent;
 
@@ -44,6 +44,9 @@ public class PlayerManager : Singleton<PlayerManager>
     }
 
     // After joining players stay persistent for the entire session
+    // TODO might need rework if hotseat keyboard inputs are required
+    // See https://forum.unity.com/threads/multiple-players-on-keyboard-new-input-system.725834/
+    // & https://forum.unity.com/threads/keyboard-splitter-local-multiplayer-keyboard.874135/
     public void OnPlayerJoinedEvent(PlayerInput pI)
     {   
         // TODO Later: check if already in level and then add desireable behaviour (join in progress or not)

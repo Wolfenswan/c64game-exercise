@@ -12,6 +12,8 @@ public class GFXController : MonoBehaviour {
     SpriteRenderer _spriteRenderer;
     int _currentAnimationHash;
 
+    public Color Color {get=>_spriteRenderer.color;}
+    public float SpriteWidth{get => _spriteRenderer.sprite.border.x + _spriteRenderer.sprite.border.z;}
     public bool SpriteIsVisible{get => _spriteRenderer.isVisible;}
     public bool SpriteXFlipped{get => _spriteRenderer.flipX;}
     public bool SpriteYFlipped{get => _spriteRenderer.flipY;}
@@ -37,6 +39,11 @@ public class GFXController : MonoBehaviour {
         if (y)
             _spriteRenderer.flipY = !_spriteRenderer.flipY;
     }
+
+    public void SetSpriteColor(Color color)
+    {
+        _spriteRenderer.color = color;
+    } 
 
     public void SetAnimatorFloat(string name, float value) => _animator.SetFloat(name, value);
 

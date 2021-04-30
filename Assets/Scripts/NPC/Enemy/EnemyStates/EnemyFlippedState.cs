@@ -26,16 +26,19 @@ public class EnemyFlippedState : EnemyState
 
     public override Enum Tick()
     {
-        if (_exitAnimDone)
+        if (_exitAnimDone && !_flippingBack)
         {
-            _entity.IncreaseAnger();
+            _entity.IncreaseAnger(1);
             return EnemyStateID.MOVE;
         }
 
         if (_flippingBack)
         {
             // TODO add small arc to fly in facing direction until isTouchingGround
+            // How to get the correct arc, up & away from the player? Probably best to pass impact point or angle through the event from PlayerController
             // Use CoRoutine?
+            // Resume all animation
+            return EnemyStateID.MOVE;
         }
 
         if(!_flippingBack)
@@ -50,7 +53,6 @@ public class EnemyFlippedState : EnemyState
             {   
                 _returningToMove = true;
                 _gfxController.ChangeAnimation((int) _exitAnimation);
-                // TODO increase anger level but ONLY if animation is finished
             }
         }
 

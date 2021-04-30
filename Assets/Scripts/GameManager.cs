@@ -12,9 +12,9 @@ public class GameManager : Singleton<GameManager>
     public event Action LevelStartedEvent;
 
     [SerializeField] GameData _data;
-    [SerializeField] List<LevelData> _levels = new List<LevelData>();
     [SerializeField] int _currentLevel = 1;
     
+    List<LevelData> _levels = new List<LevelData>();
     NPCManager _npcManager;
     PlayerManager _playerManager;
 
@@ -26,6 +26,7 @@ public class GameManager : Singleton<GameManager>
         InitializeSingleton(this); // Might need additional check
         _npcManager = null; // FIND
         _playerManager = null; // FIND
+        _levels = _data.Levels;
         // CONSIDER create NPCManager & PlayerManager programmatically as children of GameManager
     }
 

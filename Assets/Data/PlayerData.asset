@@ -18,4 +18,11 @@ MonoBehaviour:
   JumpSpeed: 2
   JumpVector: {x: 2, y: 4}
   DefaultLives: 5
+  BonusLiveTreshold: 20000
   RespawnTime: 2
+  CoinCollectPoints: 800
+  PlayerColors:
+  - serializedVersion: 2
+    rgba: 4283364794
+  - serializedVersion: 2
+    rgba: 4294967202

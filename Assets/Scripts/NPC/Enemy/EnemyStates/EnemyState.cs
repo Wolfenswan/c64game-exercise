@@ -24,7 +24,7 @@ public abstract class EnemyState : State
         _gravityVector = GameManager.Instance.Data.GravityVector; // TODO move to constructor once final
 
         _doFlip = false;
-        _entity.EnemyFlipEvent += Enemy_EnemyFlipEvent;
+        _entity.NPCFlipEvent += Entity_NPCFlipEvent;
 
         if (_animationHash != null)
             _gfxController.ChangeAnimation((int) _animationHash);    
@@ -32,8 +32,8 @@ public abstract class EnemyState : State
 
     public override void OnExit(Enum toState) 
     {
-        _entity.EnemyFlipEvent -= Enemy_EnemyFlipEvent;
+        _entity.NPCFlipEvent -= Entity_NPCFlipEvent;
     }
 
-    void Enemy_EnemyFlipEvent() => _doFlip = true;
+    void Entity_NPCFlipEvent() => _doFlip = true;
 }

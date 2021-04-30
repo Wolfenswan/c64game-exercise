@@ -20,7 +20,7 @@ public class PlayerSlideState : PlayerState
 
         if (!_player.IsTouchingGround) // TODO use gravity vector / dedicated state?
         {   
-            _player.MoveStep(moveSpeed * Time.deltaTime * _player.Facing, _gravityVector.y * Time.deltaTime);
+            _player.MoveStep(moveSpeed * Time.deltaTime * (int) _player.Facing, _gravityVector.y * Time.deltaTime);
         } else
         {
             _moveTimer += Time.deltaTime; // Not using _runTime, as fall should be excluded
@@ -30,9 +30,8 @@ public class PlayerSlideState : PlayerState
 
             if (_moveTimer >= maxDuration)
                 return PlayerStateID.IDLE;
-
-            if (!_player.IsTouchingOtherPlayerFront)
-                _player.MoveStep((moveSpeed * Time.deltaTime) * _player.Facing, 0f);
+                
+            _player.MoveStep((moveSpeed * Time.deltaTime) * (int) _player.Facing, 0f);
         }
 
         return null;

@@ -2,30 +2,34 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyController : MonoBehaviour 
-{   
-    public event Action EnemyFlipEvent;
+// TODO enemy speeds
+// Only top speed is equally as fast as player (for basic enemy)
 
+public class EnemyController : NPCController
+{   
     [SerializeField] EnemyData _data;
     [SerializeField] CollisionController _collisionController;
-    [NonSerialized] public int Facing = 1;
     
-    GFXController _gfxController;
     StateMachine _stateMachine;
     Dictionary<CollisionType,bool> _collisions = new Dictionary<CollisionType,bool>();
+
+    int _currentAngerLevel = 1;
     
     // Public accessor to communicate if the current state gives points when flippings.
     List<EnemyStateID> _givePointsInStates = new List<EnemyStateID>{EnemyStateID.MOVE, EnemyStateID.TURN};
     public bool GivePointsOnFlip{get=>_givePointsInStates.Contains(CurrentStateID);}
     
     public EnemyData Data{get => _data;}
+    public int FlipPoints{get => _data.PointsOnFlip;}
+    public int KillPoints{get => _data.PointsOnKill;}
     public EnemyStateID CurrentStateID{get => (EnemyStateID) _stateMachine.CurrentState.ID;}
     public bool IsFlipped{get => CurrentStateID == EnemyStateID.FLIPPED;}
     public bool IsTouchingGround{get=>_collisions[CollisionType.GROUND];}
-    public bool IsFacingOtherEntity{get=>(Facing == 1 && _collisions[CollisionType.ENTITY_RIGHT]) || (Facing == -1 && _collisions[CollisionType.ENTITY_LEFT]);}
+    public bool IsTouchingEntityFront{get=>(Facing == EntityFacing.RIGHT && _collisions[CollisionType.ENTITY_RIGHT]) || (Facing == EntityFacing.LEFT && _collisions[CollisionType.ENTITY_LEFT]);}
 
-    void Awake() 
+    protected override void Awake() 
     {   
+        base.Awake();
         var states = new List<State> 
         {
             new EnemyMoveState(EnemyStateID.MOVE, this, 0),
@@ -34,16 +38,6 @@ public class EnemyController : MonoBehaviour
             new EnemyTurnState(EnemyStateID.TURN, this, 3)
         };
         _stateMachine = new StateMachine(states, EnemyStateID.MOVE);
-
-        _gfxController = GetComponent<GFXController>();
-    }
-
-    void OnEnable() 
-    {
-    }
-
-    void OnDisable() 
-    {
     }
 
     void Update() 
@@ -52,22 +46,12 @@ public class EnemyController : MonoBehaviour
         _stateMachine.Tick(TickMode.UPDATE);
     }
 
-    public void MoveStep(float x, float y)
-    {
-
-    }
-
-    public void IncreaseAnger()
+    public void IncreaseAnger(int value)
     {   
-        // three anger levels: normal, blue color, red color
+        _currentAngerLevel = Mathf.Clamp(_currentAngerLevel + value, 1, _data.MaxAnger);
+        // default three anger levels: normal, blue color, red color
         // increase movement speed
         // change sprite color
-    }
-
-    public virtual void OnFlip()
-    {   
-        // Replace with more advanced OnFlip in more complex enemies; e.g. flipping to different move state instead of flip on back            
-        EnemyFlipEvent?.Invoke();
     }
 
     public void OnDead()

@@ -11,7 +11,6 @@ public class EnemyTurnState : EnemyState
     {
         base.OnEnter(fromState);
 
-        _entity.Facing *= -1;
         _entity.transform.localScale *= -1;
 
         _turnFinished = false;
@@ -22,8 +21,11 @@ public class EnemyTurnState : EnemyState
     public override Enum Tick()
     {   
         if (_turnFinished)
+        {
+            _entity.ReverseFacing();
             return EnemyStateID.MOVE;
-
+        }
+            
         if (_doFlip)
             return EnemyStateID.FLIPPED;
 

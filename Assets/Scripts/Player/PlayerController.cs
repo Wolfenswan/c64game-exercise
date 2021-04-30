@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
-public class PlayerController : MonoBehaviour 
+public class PlayerController : EntityController
 {   
     // Static events subscribed to by classes unaware of the individual player objects (e.g. Enemy- & CoinController)
-    public static event Action<EnemyController> EnemyFlipEvent; // Let subscribers know this enemy has been flipped
+    public static event Action<EnemyController> NPCFlipEvent; // Let subscribers know this enemy has been flipped
     public static event Action<EnemyController> EnemyKillEvent; // Let subscribers know this enemy has been killed
     public static event Action<CoinController> CoinCollectEvent; // Let subscribers know this coin has been collected
 
@@ -19,21 +20,20 @@ public class PlayerController : MonoBehaviour
     public event Action<Vector2, PlayerController> MoveOtherPlayerEvent;
     public event Action<PlayerController> PlayerDisabledEvent;
     
-    
     [SerializeField] PlayerData _data;
     [SerializeField] GameObject _collisionDetection;
     public bool Debugging = true;
     
-    PlayerControls _playerControls;
     PlayerInput _playerInput;
-    GFXController _gfxController;
+    
     CollisionController _collisionController;
     Collider2D _mainCollider;
+    TextMeshPro _debugText;
     StateMachine _stateMachine;
     Dictionary<CollisionType,bool> _collisions = new Dictionary<CollisionType,bool>();
 
     #region public field accessors
-    public int Facing{get; private set;} = 1;
+    public int ID {get => PlayerValues.ID;}
     public PlayerValues PlayerValues{get; private set;}
     public int MovementInput{get;private set;}
     public Vector2 Pos{get=>transform.position;}
@@ -46,6 +46,7 @@ public class PlayerController : MonoBehaviour
     public bool IsMove{get => CurrentStateID == PlayerStateID.MOVE;}
     public bool IsSlide{get => CurrentStateID == PlayerStateID.SLIDE;}
     public bool IsJump{get => CurrentStateID == PlayerStateID.JUMP;}
+    //public bool IsArcedJump{get => IsJump && (PlayerJumpState) _stateMachine.CurrentState.IsArced;}
     public bool IsSpawn{get => CurrentStateID == PlayerStateID.SPAWN;}
     public bool IsDie{get => CurrentStateID == PlayerStateID.DIE;}
     #endregion
@@ -53,32 +54,31 @@ public class PlayerController : MonoBehaviour
     #region collision detection shorthands
     public bool IsTouchingGround{get => _collisions[CollisionType.GROUND];}
     public bool IsTouchingCeiling{get => _collisions[CollisionType.CEILING];}
-    public bool IsTouchingOtherPlayerFront{get => (Facing == 1 && _collisions[CollisionType.PLAYER_RIGHT]) || (Facing == -1 && _collisions[CollisionType.PLAYER_LEFT]);}
-    public bool CanFlipEntity{get=> IsJump && IsTouchingCeiling;}
-    public bool CanFlipEnemy{get => CanFlipEntity && _collisions[CollisionType.ENEMY_ABOVE];}
-    public bool CanFlipCoin{get => CanFlipEntity && _collisions[CollisionType.COIN_ABOVE];}
-    public bool CanBouncePlayer{get => (!IsIdle && !IsDie && IsTouchingOtherPlayerFront);}
+    public bool IsTouchingOtherPlayerFront{get => (Facing == EntityFacing.RIGHT && _collisions[CollisionType.PLAYER_RIGHT]) || (Facing == EntityFacing.LEFT && _collisions[CollisionType.PLAYER_LEFT]);}
+    public bool IsTouchingOtherPlayerDown{get => (_collisions[CollisionType.PLAYER_DOWN]);}
     #endregion
 
-    int _collectionMultiplier = 1;
+    int _collectionMultiplier = 1; // TODO add functionality. max is 5.
     bool _controlsEnabled = true;
     bool _jumped = false;
-    Vector3 _moveVector = new Vector3(0f,0f,0f);
+    bool _hasBounced = false;
+
 
     struct PlayerAnimationHash
     {
         public static readonly int Idle = AtH("Idle");
         public static readonly int Move = AtH("Move");
         public static readonly int Jump = AtH("Jump");
-        public static readonly int Fall = AtH("Fall");
         public static readonly int Slide = AtH("Slide");
         public static readonly int Die = AtH("Die");
 
         static int AtH(string s) => Animator.StringToHash(s);
     }
 
-    void Awake() 
+    protected override void Awake() 
     {   
+        base.Awake();
+
         var states = new List<State>
         {
             new PlayerIdleState(PlayerStateID.IDLE, this, PlayerAnimationHash.Idle),
@@ -90,18 +90,20 @@ public class PlayerController : MonoBehaviour
         };
         _stateMachine = new StateMachine(states, PlayerStateID.SPAWN, Debugging);
 
-        _playerControls = new PlayerControls();
         _playerInput = GetComponent<PlayerInput>();
         _gfxController = GetComponent<GFXController>();
         _mainCollider = GetComponent<BoxCollider2D>();
         _collisionController = _collisionDetection.GetComponent<CollisionController>();
+        _debugText = transform.Find("DebugText").GetComponent<TextMeshPro>();
+
+        _gfxController.SetSpriteColor(_data.PlayerColors[ID]);
 
         StartCoroutine(WaitForCollisionController()); // Disables controls until the collisionController is fully functional
     }
 
     public void InitializePlayer(int id, PlayerValues playerValues = null)
     {
-        PlayerValues = (playerValues==null)?new PlayerValues(id, _data.DefaultLives, 0):playerValues;
+        PlayerValues = (playerValues==null)?new PlayerValues(id, _data.DefaultLives, 0, _data.BonusLiveTreshold):playerValues;
     }
 
     void OnDisable() 
@@ -111,107 +113,22 @@ public class PlayerController : MonoBehaviour
 
     void Update() 
     {   
-        //UpdateInput();
-        //UpdateFacing();
-        _collisions = _collisionController.UpdateCollisions();
-
         if (!_collisionController.Initialized)
             return;
-        
-        _stateMachine.Tick(TickMode.UPDATE);
+            
+        _collisions = _collisionController.UpdateCollisions();
 
-        if (CanFlipEnemy) // CanFlipEnemy detects if the player is hitting a platform from below while an enemy is standing on it
-            _collisionController.GetLastCollisionHits(CollisionType.ENEMY_ABOVE).Distinct().Where(enemy => enemy.GetComponent<EnemyController>().IsTouchingGround).ToList().ForEach(enemy => TryFlipEnemy(enemy));
-            //_collisionController.GetLastCollisionHits(CollisionType.ENEMY_ABOVE).Distinct().Where(enemy => enemy.GetComponent<EnemyController>().CanBeFlipped).ToList().ForEach(enemy => FlipEnemy(enemy));
-        
-        if (CanFlipCoin)
-            _collisionController.GetLastCollisionHits(CollisionType.COIN_ABOVE).Distinct().ToList().ForEach(coin => CollectCoin(coin));
+        _stateMachine.Tick(TickMode.UPDATE);    
 
-        if (CanBouncePlayer)
-        {   
-            var type = Facing == 1?CollisionType.PLAYER_RIGHT:CollisionType.PLAYER_LEFT;
-            var otherPC = _collisionController.GetLastCollisionHits(type).First().GetComponent<PlayerController>(); // Assumes there can only ever be one distinct player in front
+        ResolveEntityCollisions();  
 
-            if (IsMove || IsSlide)
-            {
-                if (otherPC.IsIdle)
-                {   
-                    var pushVector = new Vector2(_data.MoveSpeed * Time.deltaTime * Facing, 0f);
-                    MoveOtherPlayerEvent?.Invoke(pushVector, otherPC);
-                } else if (otherPC.IsMove)
-                {
-                    Debug.Log("Ground bounce against Move");
-                    // TODO
-                    // bounce both players off each other
-                    // maybe force both to slide in opposing directions?
-
-                    // TODO what happens if the other player is moving away from this player; is it even possible; as they move at the same speed?
-                } else if (otherPC.IsSlide)
-                {   
-                    Debug.Log("Ground bounce against Slide");
-                    // TODO check what happens in the original
-                } else
-                {
-                    Debug.LogError($"Trying to bounce other player in unexpected state {otherPC.CurrentStateID}. Own state: {CurrentStateID}.");
-                }
-            } else if (IsJump)
-            {
-                if (otherPC.IsJump || otherPC.IsSpawn)
-                {
-                    Debug.Log("Air bounce");
-                    // TODO
-                    // bounce both players off each other
-                    // maybe flip a bounced bool for both? Does the facing flip in the original?
-                    // I think they keep the facing but bounce in an upward arc away from each other
-                    // Maybe easiest with a dedicated "AirBounce" state?
-                } else
-                {
-                    Debug.LogError($"Trying to bounce other player in unexpected state {otherPC.CurrentStateID}. Own state: {CurrentStateID}.");
-                }
-            } else 
-            {
-                Debug.LogError($"Trying to bounce other player, with own state unexpected : {CurrentStateID}. Other state: {otherPC.CurrentStateID}");
-            }
-        }
-        
+        if(Debugging)
+            _debugText.text = $"Player #{ID}\n{CurrentStateID}";
     }
-
-    #region movement and positioning
-    public void MoveStep(float x, float y)
-    {
-        _moveVector.Set(x, y, 0f);
-        transform.position += _moveVector;
-    }
-
-    public void UpdateFacing(int newFacing)
-    {   
-        if (Facing != newFacing) Facing = newFacing;
-    }
-
-    public void PlaceAtSpawn(Transform spawn)
-    {
-        transform.position = (Vector2) spawn.position;
-        UpdateFacing((int) spawn.localScale.x);
-        StartCoroutine(SpawnFreeze());
-    }
-    #endregion
-
-    #region input update - triggered by actions sent through Player Input component
-    public void OnMove(InputAction.CallbackContext ctx) => MovementInput = _controlsEnabled?(int) ctx.action.ReadValue<float>():0;
-    //public void OnJump(InputAction.CallbackContext ctx) => JumpInput = _controlsEnabled?ctx.performed:false;
-    public void OnJump(InputAction.CallbackContext ctx)
-    {   
-        if (_controlsEnabled && ctx.performed) JumpEvent?.Invoke();
-        if (_controlsEnabled) _jumped = ctx.performed; // Only used by the RespawnFreeze
-    } 
-    #endregion
-
     void OnTriggerEnter2D(Collider2D other) 
     {   
-        Debug.Log(other.gameObject);
         // This trigger represents the player's default hitbox which takes care of removing enemies, collecting coins or dying to enemies
-        // TODO this trigger must not overlap with the raycast checking for enemies through platforms (i.e. it should not be heigher than head)
-        //* CONSIDER Maybe instead of trigger, also use raycast?
+        Debug.Log(other.gameObject);
 
         if (other.gameObject.tag == "Enemy")
         {
@@ -228,37 +145,135 @@ public class PlayerController : MonoBehaviour
             Debug.Log("Touching Coin!");
             CollectCoin(other.gameObject);
         }
-
-        // TODO bouncing other players?
-        // If grounded & other is not moving: push other player
-        // If grounded & running towards each other: turn around & slide
-        // if jump: bounce back a bit & descend -> send an event to JumpState? Flip a public HasBounced bool?
     }
 
-    // https://www.youtube.com/watch?v=_5pOiYHJgl
-    
+    public void ForceState(PlayerStateID newState) => _stateMachine.ForceState(newState);
+
+    #region movement and positioning
+
+    public void ReverseJumpDirection() => ((PlayerJumpState) _stateMachine.CurrentState).ReverseJumpDirection(); // Reversing the jump direction should not modify the facing
+
+    public void PlaceAtSpawn(Transform spawn) // Called by PlayerManager
+    {
+        transform.position = (Vector2) spawn.position;
+        UpdateFacing((int) spawn.localScale.x);
+        StartCoroutine(SpawnFreeze());
+    }
+    #endregion
+
+    #region input update - triggered by actions sent through PlayerInput component
+    public void OnMove(InputAction.CallbackContext ctx) 
+    {   
+        if (Debugging)
+            Debug.Log($"Player received move event"); // No better description as refering to any of the PC's fields prompts a NullRef in the event callback
+
+        MovementInput = _controlsEnabled?Mathf.Clamp((int) ctx.action.ReadValue<float>(),-1,1):0;
+    }
+
+    //public void OnJump(InputAction.CallbackContext ctx) => JumpInput = _controlsEnabled?ctx.performed:false;
+    public void OnJump(InputAction.CallbackContext ctx)
+    {   
+        if (Debugging)
+            Debug.Log($"Player received Jump event"); // No better description as refering to any of the PC's fields prompts a NullRef in the event callback
+             
+        if (_controlsEnabled && ctx.performed) JumpEvent?.Invoke();
+        if (_controlsEnabled) _jumped = ctx.performed; // Only used by the RespawnFreeze
+    } 
+    #endregion
+
+    #region collisions
+    void ResolveEntityCollisions()
+    {
+        var canFlipEntity = IsJump && IsTouchingCeiling;
+        var canFlipEnemy = canFlipEntity && _collisions[CollisionType.ENEMY_ABOVE];
+        var canFlipCoin = canFlipEntity && _collisions[CollisionType.COIN_ABOVE];
+        var canBounceOffPlayerFront = !IsIdle && !IsDie && IsTouchingOtherPlayerFront;
+        var canBounceOffPlayerBelow =!IsTouchingGround && IsTouchingOtherPlayerDown;
+
+        if (canFlipEnemy)
+        { // CanFlipEnemy detects if the player is hitting a platform from below while an enemy is standing on it
+            _collisionController
+                .GetLastCollisionHits(CollisionType.ENEMY_ABOVE).Distinct()
+                .Where(enemy => enemy.GetComponent<EnemyController>().IsTouchingGround).ToList()
+                .ForEach(enemy => TryFlipEnemy(enemy));
+        }
+
+        if (canFlipCoin)
+        {
+            _collisionController
+                .GetLastCollisionHits(CollisionType.COIN_ABOVE).Distinct()
+                .Where(coin => coin.GetComponent<CoinController>().CanBeCollected).ToList()
+                .ForEach(coin => CollectCoin(coin));
+        }
+
+        if (canBounceOffPlayerBelow && canBounceOffPlayerFront)
+            Debug.LogWarning($"[PlayerController #{ID}. Conflicting collisions: can bounce both front and down. Current State: {CurrentStateID}. Grounded: {IsTouchingGround}");
+
+        if (canBounceOffPlayerBelow)
+            _stateMachine.ForceState(PlayerStateID.JUMP);
+        
+        if (canBounceOffPlayerFront)
+        {   
+            var type = Facing == EntityFacing.RIGHT?CollisionType.PLAYER_RIGHT:CollisionType.PLAYER_LEFT;
+            var otherPC = _collisionController.GetLastCollisionHits(type).First().GetComponent<PlayerController>(); // Assumes there can only ever be one distinct player in front
+
+            if (!otherPC.IsDie)
+                ResolveFrontalBounce(otherPC);
+        }
+    }
+    void ResolveFrontalBounce(PlayerController otherPC)
+    {   
+        if (Debugging)
+            Debug.Log($"Player #{ID}({CurrentStateID}), facing {Facing} bounced off player #{otherPC.ID}({otherPC.CurrentStateID}), facing {otherPC.Facing}.");
+        
+        if (IsMove || IsSlide)
+        {   
+            if (otherPC.IsIdle)
+            {   
+                var pushVector = new Vector2(_data.MoveSpeed * Time.deltaTime * (int) Facing, 0f);
+                MoveOtherPlayerEvent?.Invoke(pushVector, otherPC);
+            } else if (otherPC.IsMove || otherPC.IsSlide || otherPC.IsJump)
+            {
+                ReverseFacing(); // No need to send event, as other PlayerContoller mirrors this behavior
+
+                if (!IsSlide)
+                    _stateMachine.ForceState(PlayerStateID.SLIDE);
+
+                if (otherPC.Facing == Facing)
+                    Debug.LogWarning($"[PlayerController #{ID}] Unexpected event: {this} bounced {otherPC} but they are moving the same direction.");
+            } else
+            {
+                Debug.LogError($"[PlayerController #{ID}] Trying to bounce other player #{otherPC.ID} in unexpected state {otherPC.CurrentStateID}. Own state: {CurrentStateID}.");
+            }
+        } else if (IsJump)
+        {
+            ((PlayerJumpState) _stateMachine.CurrentState).ReverseJumpDirection();
+        } else 
+        {
+            Debug.LogError($"[PlayerController #{ID}] Trying to bounce other player, from own unexpected state: {CurrentStateID}. Other state: {otherPC.CurrentStateID}");
+        }
+    }
+
     void CollectCoin(GameObject coin)
     {
         CoinCollectEvent?.Invoke(coin.GetComponent<CoinController>());
-        AddPoints(10); // TODO data ; also multiplier?
+        AddPoints(_data.CoinCollectPoints);
     }
 
     void TryFlipEnemy(GameObject enemy)
     {   
         var ec = enemy.GetComponent<EnemyController>();
-        EnemyFlipEvent?.Invoke(ec);
+        NPCFlipEvent?.Invoke(ec);
         if(ec.GivePointsOnFlip) // TODO might not be the most robust method; experiment with receiving answering events from ec if point gain is odd
-            AddPoints(10); // TODO data
+            AddPoints(ec.FlipPoints);
     }
 
     void KillEnemy(EnemyController enemy)
     {
         EnemyKillEvent?.Invoke(enemy);
-        AddPoints(10); // TODO data // enemyCollectPoints * collectionBonus
+        AddPoints(enemy.KillPoints * _collectionMultiplier);
         // TODO start or reset collectionTimer coRoutine
     }
-
-    void AddPoints(int points) => PlayerValues.UpdateScore(points);
 
     void Die()
     {
@@ -267,6 +282,9 @@ public class PlayerController : MonoBehaviour
         _mainCollider.enabled = false;
         StartCoroutine(RespawnTimer());       
     }
+    #endregion
+
+    void AddPoints(int points) => PlayerValues.UpdateScore(points);
 
     IEnumerator CollectionCountdown()
     {   
@@ -292,7 +310,9 @@ public class PlayerController : MonoBehaviour
         yield return new WaitUntil(() => _controlsEnabled && _mainCollider != null && _stateMachine != null);
         _stateMachine.ForceState(PlayerStateID.SPAWN);
         _mainCollider.enabled = false;
+        Debug.Log("Controls free");
         yield return new WaitUntil(() => (MovementInput != 0 || _jumped || Time.time - tick > 2f));
+        Debug.Log("Player unlocked");
         _mainCollider.enabled = true; // Disabled by the death-state
     }
 
