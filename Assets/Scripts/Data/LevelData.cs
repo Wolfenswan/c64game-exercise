@@ -5,6 +5,13 @@ using System;
 [Serializable]
 public class EnemyPrefabContainer // Custom container to store both the enemy prefab and the # to spawn per level
 {   
+    // Copy-constructor required by the NPCManager to properly clone the prefab-list from LevelData.
+    public EnemyPrefabContainer(EnemyPrefabContainer container)
+    {
+        Prefab = container.Prefab;
+        Count = container.Count;
+    }
+
     public GameObject Prefab;
     public int Count;
 }
@@ -16,5 +23,5 @@ public class LevelData : ScriptableObject
     [Tooltip("Prefab and number for each enemy.")] public List<EnemyPrefabContainer> EnemiesToSpawn;
     public bool BonusStage; //* Maybe just set via GameManager each x levels?
 
-    //* Maybe: Platform-color / sprite to use
+    //* Maybe: Platform-color / sprite & background to use
 }

@@ -1,19 +1,14 @@
 using System;
 using UnityEngine;
 
-public abstract class EnemyState : State
+public abstract class CoinState : State
 {
-    protected readonly EnemyController _entity;
+    protected readonly CoinController _entity;
     protected readonly GFXController _gfxController;
     protected readonly int? _animationHash;
-    protected bool _doFlip = false;
-    protected Vector2 _flipContactPoint;
     protected Vector2 _gravityVector;
 
-    public bool CanBeFlipped{get; protected set;} 
-    public bool GivePointsOnFlip{get; protected set;} 
-
-    public EnemyState(EnemyStateID id, EnemyController entity, int? baseAnimationHash = null) 
+    public CoinState(CoinStateID id, CoinController entity, int? baseAnimationHash = null) 
     {   
         ID = id;
         _entity = entity;
@@ -27,21 +22,11 @@ public abstract class EnemyState : State
 
         _gravityVector = GameManager.Instance.Data.GravityVector; // TODO move to constructor once final
 
-        _doFlip = false;
-        _flipContactPoint = Vector2.zero;
-        _entity.EnemyFlipEvent += Entity_NPCFlipEvent;
-
         if (_animationHash != null)
             _gfxController.ChangeAnimation((int) _animationHash);    
     }
 
     public override void OnExit(Enum toState) 
     {
-        _entity.EnemyFlipEvent -= Entity_NPCFlipEvent;
-    }
-
-    void Entity_NPCFlipEvent()
-    {
-        _doFlip = true;
     }
 }

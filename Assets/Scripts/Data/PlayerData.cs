@@ -11,7 +11,7 @@ public class PlayerData : ScriptableObject
     public Vector2 JumpVector = new Vector2(2,2);
     public int DefaultLives = 5;
     public int BonusLiveTreshold = 20000;
-    public float RespawnTime = 2f;
-    public int CoinCollectPoints = 800;
+    public float RespawnDelay = 2f;
+    [Tooltip("How long the player floats in the air after respawing & not other input occurs")] public float RespawnGracePeriod = 3f;
     public List<Color32> PlayerColors;
 }

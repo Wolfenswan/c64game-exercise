@@ -16,7 +16,7 @@ MonoBehaviour:
   TimeToSlide: 0.25
   SlideDuration: 0.5
   JumpSpeed: 2
-  JumpVector: {x: 2, y: 4}
+  JumpVector: {x: 2, y: 6}
   DefaultLives: 5
   BonusLiveTreshold: 20000
   RespawnTime: 2

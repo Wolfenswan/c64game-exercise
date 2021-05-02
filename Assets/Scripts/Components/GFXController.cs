@@ -27,7 +27,7 @@ public class GFXController : MonoBehaviour {
     public void ChangeAnimation (int newAnimationHash) 
     {
         if (_currentAnimationHash == newAnimationHash) return;
-        _animator.Play(newAnimationHash);
+        //_animator.Play(newAnimationHash); //! TODO RE-ENABLE after adding placeholder animations
         _currentAnimationHash = newAnimationHash;
     }
 

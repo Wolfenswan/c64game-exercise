@@ -3,7 +3,11 @@ using System;
 
 public class EnemyFallState : EnemyState 
 {
-    public EnemyFallState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) {}
+    public EnemyFallState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) 
+    {
+        CanBeFlipped = false;
+        GivePointsOnFlip = false;
+    }
 
     public override void OnEnter(Enum fromState)
     {

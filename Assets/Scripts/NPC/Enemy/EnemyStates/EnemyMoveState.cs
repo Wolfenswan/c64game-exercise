@@ -3,7 +3,12 @@ using System;
 
 public class EnemyMoveState : EnemyState 
 {
-    public EnemyMoveState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) {}
+
+    public EnemyMoveState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) 
+    {
+        CanBeFlipped = true;
+        GivePointsOnFlip = true;
+    }
 
     public override Enum Tick() 
     {   
@@ -12,7 +17,7 @@ public class EnemyMoveState : EnemyState
 
         _entity.MoveStep((speed * Time.deltaTime) * direction, 0f);
 
-        if (!_entity.IsTouchingGround) // TODO add && !_entity.IsTouchingSpawn
+        if (!_entity.IsTouchingGround && !_entity.IsTouchingSpawn)
             return EnemyStateID.FALL;
 
         if (_doFlip)

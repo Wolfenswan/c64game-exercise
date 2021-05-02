@@ -5,6 +5,7 @@ using System.Linq;
 public enum CollisionType 
 {
     GROUND,
+    SPAWN,
     CEILING,
     ENTITY_LEFT,
     ENTITY_RIGHT,
@@ -13,6 +14,7 @@ public enum CollisionType
     PLAYER_DOWN,
     ENEMY_ABOVE,
     COIN_ABOVE,
+    NPC_ABOVE,
 }
 
 public class CollisionController : MonoBehaviour {

@@ -7,6 +7,12 @@ TagManager:
   - PlayerSpawn
   - PlayerRespawn
   - NPC
+  - Enemy
+  - Coin
+  - EnemySpawn
+  - NPCManager
+  - PlayerManager
+  - NPCSpawn
   layers:
   - Default
   - TransparentFX
@@ -16,8 +22,8 @@ TagManager:
   - UI
   - Player
   - Ground
-  - Enemy
-  - Coin
+  - NPC
+  - EnemySpawn
   - 
   - 
   - 
@@ -43,4 +49,16 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 2493030767
+    locked: 0
+  - name: NPC
+    uniqueID: 2372311317
+    locked: 0
+  - name: NPCSpawner
+    uniqueID: 530448661
+    locked: 0
+  - name: Player
+    uniqueID: 4259345901
     locked: 0

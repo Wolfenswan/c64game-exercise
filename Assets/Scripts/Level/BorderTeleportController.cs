@@ -5,21 +5,11 @@ using System.Collections.Generic;
 // expand the position by using the entity sprite-width / 2 instead of using exit-transforms
 // Alternative: set a int-range for the offset and use gizmos to draw them
 
-[RequireComponent(typeof(BoxCollider2D), typeof(Rigidbody2D))]
+[RequireComponent(typeof(BoxCollider2D), typeof(Rigidbody2D))] // collider needs to be a trigger, rigidbody a kinematic body
 public class BorderTeleportController : MonoBehaviour 
 {
-    //public static event Action<GameObject, Vector2, EntityFacing> TeleportEvent; // The entity to teleport,the target position and facing
     [SerializeField] Transform _exit;
-    [SerializeField] List<string> _tagsToTeleport;
-    //[SerializeField] EntityFacing FacingOnExit = EntityFacing.RIGHT;
-
-    BoxCollider2D _ownCollider;
-
-    void Awake() 
-    {
-        _ownCollider = GetComponent<BoxCollider2D>();
-        _ownCollider.isTrigger = true;
-    }
+    [TagSelector][SerializeField] List<string> _tagsToTeleport;
 
     void OnTriggerEnter2D(Collider2D other) 
     {   

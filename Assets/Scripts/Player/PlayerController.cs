@@ -4,13 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using TMPro;
 
 public class PlayerController : EntityController
 {   
     // Static events subscribed to by classes unaware of the individual player objects (e.g. Enemy- & CoinController)
-    public static event Action<EnemyController> NPCFlipEvent; // Let subscribers know this enemy has been flipped
-    public static event Action<EnemyController> EnemyKillEvent; // Let subscribers know this enemy has been killed
+    public static event Action<EnemyController, PlayerController> NPCFlipEvent; // Let subscribers know this enemy has been flipped
+    public static event Action<EnemyController, PlayerController> EnemyKillEvent; // Let subscribers know this enemy has been killed
     public static event Action<CoinController> CoinCollectEvent; // Let subscribers know this coin has been collected
 
     // Non-static events subscribed to by objects aware of the individual player objects (PlayerStates and PlayerManager)
@@ -21,23 +20,19 @@ public class PlayerController : EntityController
     public event Action<PlayerController> PlayerDisabledEvent;
     
     [SerializeField] PlayerData _data;
-    [SerializeField] GameObject _collisionDetection;
-    public bool Debugging = true;
     
     PlayerInput _playerInput;
     
-    CollisionController _collisionController;
-    Collider2D _mainCollider;
-    TextMeshPro _debugText;
+    BoxCollider2D _mainCollider;
     StateMachine _stateMachine;
-    Dictionary<CollisionType,bool> _collisions = new Dictionary<CollisionType,bool>();
+
 
     #region public field accessors
     public int ID {get => PlayerValues.ID;}
+    public override string CurrentStateName{get => _stateMachine.CurrentState.ToString();}
     public PlayerValues PlayerValues{get; private set;}
     public int MovementInput{get;private set;}
-    public Vector2 Pos{get=>transform.position;}
-    public PlayerData Data{get => _data;}    
+    public PlayerData Data{get => _data;}
     public PlayerStateID CurrentStateID{get => (PlayerStateID) _stateMachine.CurrentState.ID;}
     #endregion
 
@@ -60,11 +55,8 @@ public class PlayerController : EntityController
 
     int _collectionMultiplier = 1; // TODO add functionality. max is 5.
     bool _controlsEnabled = true;
-    bool _jumped = false;
-    bool _hasBounced = false;
 
-
-    struct PlayerAnimationHash
+    struct AnimationHash
     {
         public static readonly int Idle = AtH("Idle");
         public static readonly int Move = AtH("Move");
@@ -81,20 +73,18 @@ public class PlayerController : EntityController
 
         var states = new List<State>
         {
-            new PlayerIdleState(PlayerStateID.IDLE, this, PlayerAnimationHash.Idle),
-            new PlayerSpawnState(PlayerStateID.SPAWN, this, PlayerAnimationHash.Idle),
-            new PlayerMoveState(PlayerStateID.MOVE, this, PlayerAnimationHash.Move),
-            new PlayerJumpState(PlayerStateID.JUMP, this, PlayerAnimationHash.Jump),
-            new PlayerSlideState(PlayerStateID.SLIDE, this, PlayerAnimationHash.Slide),
-            new PlayerDieState(PlayerStateID.DIE, this, PlayerAnimationHash.Die),
+            new PlayerIdleState(PlayerStateID.IDLE, this, AnimationHash.Idle),
+            new PlayerSpawnState(PlayerStateID.SPAWN, this, AnimationHash.Idle),
+            new PlayerMoveState(PlayerStateID.MOVE, this, AnimationHash.Move),
+            new PlayerJumpState(PlayerStateID.JUMP, this, AnimationHash.Jump),
+            new PlayerSlideState(PlayerStateID.SLIDE, this, AnimationHash.Slide),
+            new PlayerDieState(PlayerStateID.DIE, this, AnimationHash.Die),
         };
         _stateMachine = new StateMachine(states, PlayerStateID.SPAWN, Debugging);
 
         _playerInput = GetComponent<PlayerInput>();
         _gfxController = GetComponent<GFXController>();
         _mainCollider = GetComponent<BoxCollider2D>();
-        _collisionController = _collisionDetection.GetComponent<CollisionController>();
-        _debugText = transform.Find("DebugText").GetComponent<TextMeshPro>();
 
         _gfxController.SetSpriteColor(_data.PlayerColors[ID]);
 
@@ -111,43 +101,21 @@ public class PlayerController : EntityController
         PlayerDisabledEvent?.Invoke(this);
     }
 
-    void Update() 
+    protected override void Update() 
     {   
+        base.Update();
+
         if (!_collisionController.Initialized)
             return;
-            
+        
         _collisions = _collisionController.UpdateCollisions();
 
         _stateMachine.Tick(TickMode.UPDATE);    
 
-        ResolveEntityCollisions();  
-
-        if(Debugging)
-            _debugText.text = $"Player #{ID}\n{CurrentStateID}";
+        // Delaying the resolve by one tick after updating the collisions gives better results when two players are colliding. 
+        // Which probably means I should make the detection more robust or frame-perfect; but then again, it works.
+        ResolveRaycasterCollisions(); 
     }
-    void OnTriggerEnter2D(Collider2D other) 
-    {   
-        // This trigger represents the player's default hitbox which takes care of removing enemies, collecting coins or dying to enemies
-        Debug.Log(other.gameObject);
-
-        if (other.gameObject.tag == "Enemy")
-        {
-            Debug.Log("Touching Enemy!");
-            var enemy = other.gameObject.GetComponent<EnemyController>();
-            if (enemy.IsFlipped)
-                KillEnemy(enemy);
-            else
-                Die();
-        }
-        
-        if (other.gameObject.tag == "Coin")
-        {
-            Debug.Log("Touching Coin!");
-            CollectCoin(other.gameObject);
-        }
-    }
-
-    public void ForceState(PlayerStateID newState) => _stateMachine.ForceState(newState);
 
     #region movement and positioning
 
@@ -164,25 +132,52 @@ public class PlayerController : EntityController
     #region input update - triggered by actions sent through PlayerInput component
     public void OnMove(InputAction.CallbackContext ctx) 
     {   
-        if (Debugging)
-            Debug.Log($"Player received move event"); // No better description as refering to any of the PC's fields prompts a NullRef in the event callback
-
         MovementInput = _controlsEnabled?Mathf.Clamp((int) ctx.action.ReadValue<float>(),-1,1):0;
     }
 
     //public void OnJump(InputAction.CallbackContext ctx) => JumpInput = _controlsEnabled?ctx.performed:false;
     public void OnJump(InputAction.CallbackContext ctx)
-    {   
-        if (Debugging)
-            Debug.Log($"Player received Jump event"); // No better description as refering to any of the PC's fields prompts a NullRef in the event callback
-             
+    {     
         if (_controlsEnabled && ctx.performed) JumpEvent?.Invoke();
-        if (_controlsEnabled) _jumped = ctx.performed; // Only used by the RespawnFreeze
     } 
     #endregion
 
     #region collisions
-    void ResolveEntityCollisions()
+    
+    // The trigger is the default hitbox that deals with simply touching other entities, namely enemies & coins
+    // TODO might replace this with the raycast system.
+    void OnTriggerEnter2D(Collider2D other) 
+    { 
+        if (IsDie)
+            return;
+
+        if (other.gameObject.tag == "Enemy")
+        {
+            var enemy = other.gameObject.GetComponent<EnemyController>();
+            
+            if (Debugging)
+                Debug.Log($"{this} touching {enemy}.");
+
+            if (!enemy.IsDie)
+            {
+                if (enemy.IsFlipped)
+                    KillEnemy(enemy);
+                else
+                    Die();
+            }
+        }
+        
+        if (other.gameObject.tag == "Coin")
+        {
+            var coin = other.gameObject.GetComponent<CoinController>();
+            if (Debugging)
+                Debug.Log($"{this} touching {other.gameObject}.");
+
+            if (coin.CanBeCollected) CollectCoin(coin);
+        }
+    }
+    
+    void ResolveRaycasterCollisions()
     {
         var canFlipEntity = IsJump && IsTouchingCeiling;
         var canFlipEnemy = canFlipEntity && _collisions[CollisionType.ENEMY_ABOVE];
@@ -194,7 +189,7 @@ public class PlayerController : EntityController
         { // CanFlipEnemy detects if the player is hitting a platform from below while an enemy is standing on it
             _collisionController
                 .GetLastCollisionHits(CollisionType.ENEMY_ABOVE).Distinct()
-                .Where(enemy => enemy.GetComponent<EnemyController>().IsTouchingGround).ToList()
+                .Where(enemy => enemy.GetComponent<EnemyController>().CanBeFlipped).ToList()
                 .ForEach(enemy => TryFlipEnemy(enemy));
         }
 
@@ -203,7 +198,7 @@ public class PlayerController : EntityController
             _collisionController
                 .GetLastCollisionHits(CollisionType.COIN_ABOVE).Distinct()
                 .Where(coin => coin.GetComponent<CoinController>().CanBeCollected).ToList()
-                .ForEach(coin => CollectCoin(coin));
+                .ForEach(coin => CollectCoin(coin.GetComponent<CoinController>()));
         }
 
         if (canBounceOffPlayerBelow && canBounceOffPlayerFront)
@@ -254,23 +249,29 @@ public class PlayerController : EntityController
         }
     }
 
-    void CollectCoin(GameObject coin)
-    {
-        CoinCollectEvent?.Invoke(coin.GetComponent<CoinController>());
-        AddPoints(_data.CoinCollectPoints);
+    void CollectCoin(CoinController coin)
+    {          
+        if(Debugging)
+            Debug.Log($"{this} collects {coin}");
+
+        CoinCollectEvent?.Invoke(coin);
+        AddPoints(coin.Points);
     }
 
     void TryFlipEnemy(GameObject enemy)
     {   
+        if(Debugging)
+            Debug.Log($"{this} trys to flip {enemy}.");
+
         var ec = enemy.GetComponent<EnemyController>();
-        NPCFlipEvent?.Invoke(ec);
+        NPCFlipEvent?.Invoke(ec, this);
         if(ec.GivePointsOnFlip) // TODO might not be the most robust method; experiment with receiving answering events from ec if point gain is odd
             AddPoints(ec.FlipPoints);
     }
 
     void KillEnemy(EnemyController enemy)
     {
-        EnemyKillEvent?.Invoke(enemy);
+        EnemyKillEvent?.Invoke(enemy, this);
         AddPoints(enemy.KillPoints * _collectionMultiplier);
         // TODO start or reset collectionTimer coRoutine
     }
@@ -296,7 +297,9 @@ public class PlayerController : EntityController
     {   
         // Wait for a few seconds so the animation has played
         //* Consider alternative: use a WaitUntil for player sprite to be out of camera or combine them; so it's waituntil -> wait 2 seconds
-        yield return new WaitForSeconds(_data.RespawnTime);
+        if (Debugging)
+            Debug.Log($"{this} dies with currently {PlayerValues.Lives}");
+        yield return new WaitForSeconds(_data.RespawnDelay);
         if (PlayerValues.Lives > 0)
             PlayerRespawnEvent.Invoke(this);
         else
@@ -308,11 +311,11 @@ public class PlayerController : EntityController
         var tick = Time.time;
         StartCoroutine(InputBuffer());
         yield return new WaitUntil(() => _controlsEnabled && _mainCollider != null && _stateMachine != null);
+        if (Debugging) Debug.Log($"{this} player controls free.");
         _stateMachine.ForceState(PlayerStateID.SPAWN);
         _mainCollider.enabled = false;
-        Debug.Log("Controls free");
-        yield return new WaitUntil(() => (MovementInput != 0 || _jumped || Time.time - tick > 2f));
-        Debug.Log("Player unlocked");
+        yield return new WaitUntil(() => !IsSpawn);
+        if (Debugging) Debug.Log($"{this} unlocked.");
         _mainCollider.enabled = true; // Disabled by the death-state
     }
 

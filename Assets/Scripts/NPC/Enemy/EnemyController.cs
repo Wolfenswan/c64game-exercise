@@ -7,43 +7,75 @@ using UnityEngine;
 
 public class EnemyController : NPCController
 {   
+    public event Action EnemyFlipEvent; // Listened to by the individual states.
+
     [SerializeField] EnemyData _data;
-    [SerializeField] CollisionController _collisionController;
     
     StateMachine _stateMachine;
-    Dictionary<CollisionType,bool> _collisions = new Dictionary<CollisionType,bool>();
-
     int _currentAngerLevel = 1;
     
-    // Public accessor to communicate if the current state gives points when flippings.
-    List<EnemyStateID> _givePointsInStates = new List<EnemyStateID>{EnemyStateID.MOVE, EnemyStateID.TURN};
-    public bool GivePointsOnFlip{get=>_givePointsInStates.Contains(CurrentStateID);}
+    public EnemyState CurrentState{get=> (EnemyState) _stateMachine.CurrentState;}
+    public EnemyStateID CurrentStateID{get => (EnemyStateID) CurrentState.ID;}
+    public override string CurrentStateName{get => CurrentState.ToString();}
+    public bool GivePointsOnFlip{get=> CurrentState.GivePointsOnFlip;}
+    public bool CanBeFlipped{get => CurrentState.CanBeFlipped;}
     
     public EnemyData Data{get => _data;}
     public int FlipPoints{get => _data.PointsOnFlip;}
     public int KillPoints{get => _data.PointsOnKill;}
-    public EnemyStateID CurrentStateID{get => (EnemyStateID) _stateMachine.CurrentState.ID;}
+    public Vector2 EventContactVector{get;private set;} = Vector2.zero; // Used by the flip & kill states to determine where the contact came from and apply the according arc to their movement
+
+    #region state shorthands
+    public bool IsDie{get => CurrentStateID == EnemyStateID.DIE;}
     public bool IsFlipped{get => CurrentStateID == EnemyStateID.FLIPPED;}
-    public bool IsTouchingGround{get=>_collisions[CollisionType.GROUND];}
-    public bool IsTouchingEntityFront{get=>(Facing == EntityFacing.RIGHT && _collisions[CollisionType.ENTITY_RIGHT]) || (Facing == EntityFacing.LEFT && _collisions[CollisionType.ENTITY_LEFT]);}
+    #endregion
+
+    struct AnimationHash
+    {
+        public static readonly int Move = AtH("Move");
+        public static readonly int Turn = AtH("Turn");
+        public static readonly int Fall = AtH("Jump");
+        public static readonly int FlippedIntro = AtH("FlippedIn");
+        public static readonly int FlippedExit = AtH("FlippedOut");
+        public static readonly int Die = AtH("Die");
+
+        static int AtH(string s) => Animator.StringToHash(s);
+    }
 
     protected override void Awake() 
     {   
         base.Awake();
         var states = new List<State> 
         {
-            new EnemyMoveState(EnemyStateID.MOVE, this, 0),
-            new EnemyFallState(EnemyStateID.FALL, this, 1),
-            new EnemyFlippedState(EnemyStateID.FLIPPED, this, 2, 0),
-            new EnemyTurnState(EnemyStateID.TURN, this, 3)
+            new EnemyMoveState(EnemyStateID.MOVE, this, AnimationHash.Move),
+            new EnemyTurnState(EnemyStateID.TURN, this, AnimationHash.Turn),
+            new EnemyFallState(EnemyStateID.FALL, this, AnimationHash.Fall),
+            new EnemyFlippedState(EnemyStateID.FLIPPED, this, AnimationHash.FlippedIntro, AnimationHash.FlippedExit),
+            new EnemyDieState(EnemyStateID.DIE, this, AnimationHash.Die)
         };
         _stateMachine = new StateMachine(states, EnemyStateID.MOVE);
     }
 
-    void Update() 
+    protected override void Update() 
     {
+        base.Update();
+
+        if (!_collisionController.Initialized)
+            return;
+        
         _collisions = _collisionController.UpdateCollisions();
+
         _stateMachine.Tick(TickMode.UPDATE);
+    }
+
+    void OnEnable() 
+    {
+        _gfxController.AnimationFinishedEvent += GFX_AnimationFinishedEvent;
+    }
+
+    void OnDisable() 
+    {
+        _gfxController.AnimationFinishedEvent -= GFX_AnimationFinishedEvent;
     }
 
     public void IncreaseAnger(int value)
@@ -53,10 +85,27 @@ public class EnemyController : NPCController
         // increase movement speed
         // change sprite color
     }
-
-    public void OnDead()
-    {
-        // TODO force to die state (if it needs own state?)
+    public virtual void OnFlip(Vector2 contactPoint)
+    {   
+        // Replaced by more advanced implementations in more complex enemies; e.g. flipping to different move state instead of flip on back
+        EventContactVector = contactPoint;            
+        EnemyFlipEvent?.Invoke();
     }
-    
+
+    public void OnDead(Vector2 contactPoint)
+    {
+        Debug.Log($"{this} was killed!");
+        EventContactVector = contactPoint;
+        _stateMachine.ForceState(EnemyStateID.DIE);
+    }
+
+    public override void Delete()
+    {
+        if (!IsDie) _stateMachine.ForceState(EnemyStateID.DIE);
+    }
+
+    void GFX_AnimationFinishedEvent(int animationHash)
+    {
+        if (animationHash == AnimationHash.Die) Destroy(gameObject);
+    }
 }

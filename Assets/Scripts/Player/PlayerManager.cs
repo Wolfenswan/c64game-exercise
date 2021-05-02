@@ -15,6 +15,7 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     List<Transform> _playerSpawnPositions;
     List<Transform> _playerRespawnPositions;
 
+    bool _canJoin = true;
     Dictionary<int, PlayerController> _activePlayers = new Dictionary<int, PlayerController>();
 
     void Awake() 
@@ -26,33 +27,30 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
 
     void OnEnable() 
     {
-        // PlayerController.PlayerRespawnEvent += PlayerController_PlayerRespawnEvent;
-        // PlayerController.PlayerDeadEvent += PlayerController_PlayerDeadEvent; //PlayerDeadEvent is fired once a player has lost all their lives
     }
 
     void Start() 
     {
         GameManager.Instance.LevelChangeEvent += GameManager_LevelChangeEvent; // Subscribing in OnEnable can cause a NullReferenceException
+        GameManager.Instance.LevelStartedEvent += GameManager_LevelStartedEvent;
     }
     
     void OnDisable() 
     {   
-        // PlayerController.PlayerRespawnEvent -= PlayerController_PlayerRespawnEvent;
-        // PlayerController.PlayerDeadEvent -= PlayerController_PlayerDeadEvent;
-
         GameManager.Instance.LevelChangeEvent -= GameManager_LevelChangeEvent;
+        GameManager.Instance.LevelStartedEvent -= GameManager_LevelStartedEvent;
     }
 
     // After joining players stay persistent for the entire session
-    // TODO might need rework if hotseat keyboard inputs are required
-    // See https://forum.unity.com/threads/multiple-players-on-keyboard-new-input-system.725834/
-    // & https://forum.unity.com/threads/keyboard-splitter-local-multiplayer-keyboard.874135/
     public void OnPlayerJoinedEvent(PlayerInput pI)
     {   
-        // TODO Later: check if already in level and then add desireable behaviour (join in progress or not)
+        //! If there's no continue system -> prevent players from rejoining; _gameInProgress bool?
+        if (!_canJoin)
+            return;
+
         var id = pI.playerIndex;
         pI.gameObject.name = $"Player #{id}";
-        pI.transform.parent = transform; // TODO needs testing; might not be the ideal solution for changing scenes.
+        pI.transform.parent = transform;
 
         var pc = pI.GetComponent<PlayerController>();
         pc.InitializePlayer(id);
@@ -63,13 +61,11 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     }
 
     // Called when changing to a new scene/level
-    void PlacePlayers()
+    void ResetPlayerPositions()
     {
-        var idx = 0;
         foreach (var item in _activePlayers.Values)
         {
-            item.PlaceAtSpawn(_playerSpawnPositions[idx]);
-            idx++;
+            item.PlaceAtSpawn(_playerSpawnPositions[item.ID]);
         }
     }
 
@@ -91,9 +87,16 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
 
     void GameManager_LevelChangeEvent(LevelData data)
     {
-        // Do stuff with the players; disable controls?
+        // TODO maybe requires CoRoutine OnLevelChange
+        // Disable Players for the time being
+        // Make sure players cant join
         // Wait for new level to load
-        // SpawnPlayers()
+        ResetPlayerPositions(); // SpawnPlayers() at the default positions
+    }
+
+    void GameManager_LevelStartedEvent()
+    {
+        // Enable player controls; however might be unnecessary if TimeScale works as intended?
     }
 
     void Player_MoveOtherPlayerEvent(Vector2 moveVector, PlayerController otherPlayer) => otherPlayer.MoveStep(moveVector.x, moveVector.y);
@@ -102,9 +105,11 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     
     void Player_PlayerDeadEvent(PlayerController player)
     {
-        player.gameObject.SetActive(false);
+        //player.gameObject.SetActive(false);
         _activePlayers.Remove(player.PlayerValues.ID);
-        //* Other options: show continue? prompt on UI
+        Destroy(player.gameObject);
+        
+        //! IDEA show "continue?" prompt on UI
 
         if (_activePlayers.Count == 0)
             AllPlayersKilledEvent?.Invoke();

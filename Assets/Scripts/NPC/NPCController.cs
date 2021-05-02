@@ -1,13 +1,8 @@
-using System;
-using UnityEngine;
-
 public abstract class NPCController : EntityController 
-{
-    public event Action NPCFlipEvent; // Listened to by the individual states
+{   
+    public bool IsTouchingGround{get=>_collisions[CollisionType.GROUND];}
+    public bool IsTouchingEntityFront{get=>(IsFacingRight && _collisions[CollisionType.ENTITY_RIGHT]) || (!IsFacingRight && _collisions[CollisionType.ENTITY_LEFT]);}
+    public bool IsTouchingSpawn{get => _collisions[CollisionType.SPAWN];}
 
-    public virtual void OnFlip()
-    {   
-        // Replaced by more advanced implementations in more complex enemies; e.g. flipping to different move state instead of flip on back            
-        NPCFlipEvent?.Invoke();
-    }
+    public abstract void Delete();
 }

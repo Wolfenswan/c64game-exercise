@@ -1,19 +1,20 @@
 using System;
-using UnityEngine;
 
 public class EnemyTurnState : EnemyState 
-{
+{   
     bool _turnFinished;
 
-    public EnemyTurnState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) {}
+    public EnemyTurnState(EnemyStateID id, EnemyController entity, int animationHash) : base(id, entity, animationHash) 
+    {
+        CanBeFlipped = true;
+        GivePointsOnFlip = true;
+    }
 
     public override void OnEnter(Enum fromState)
     {
         base.OnEnter(fromState);
 
-        _entity.transform.localScale *= -1;
-
-        _turnFinished = false;
+        _turnFinished = true; // TODO debug
 
         _gfxController.AnimationFinishedEvent += TurnFinished;
     }

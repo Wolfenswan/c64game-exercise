@@ -30,7 +30,7 @@ public class PlayerValues
     {
         Score += points;
 
-        ScoreUpdatedEvent.Invoke(ID, Score);
+        ScoreUpdatedEvent?.Invoke(ID, Score);
 
         if (Score >= NextBonusLiveAt)
         {

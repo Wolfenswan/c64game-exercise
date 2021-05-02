@@ -16,6 +16,9 @@ public class PlayerSpawnState : PlayerState
         if (_doJump)
             return PlayerStateID.JUMP;
 
+        if(_runTime > _player.Data.RespawnGracePeriod)
+            return PlayerStateID.IDLE;
+
         return null;
     }
 }

@@ -5,16 +5,15 @@ public class PlayerJumpState : PlayerState
 {   
     public PlayerJumpState(PlayerStateID id, PlayerController player, int animationHash) : base(id, player, animationHash){}
 
-    Vector2 _velocityVector = new Vector2(0,0);
+    Vector2 _velocityVector;
     bool _wasBounced;
 
     public void ReverseJumpDirection() 
     {   
         if (_wasBounced)
             return;
-
+            
         _velocityVector.Set(_velocityVector.x * -1 , _velocityVector.y);
-
         _wasBounced = true;
     }
 
@@ -27,9 +26,12 @@ public class PlayerJumpState : PlayerState
         _velocityVector = _player.Data.JumpVector; // TODO move to constructor / field once finalized
         _velocityVector.x *= (int) _player.Facing;
 
-        //* NOTE: if bouncing from other player below the default x-vector might be a bit too strong. In that case check individually and apply a low x (maybe just velV.x * 0.5?)
-        if (!_player.IsTouchingOtherPlayerDown && ((PlayerStateID) fromState == PlayerStateID.IDLE || (PlayerStateID) fromState == PlayerStateID.SPAWN) && _player.MovementInput == 0)
+        if ((PlayerStateID) fromState == PlayerStateID.IDLE || ((PlayerStateID) fromState == PlayerStateID.SPAWN && _player.MovementInput == 0))
             _velocityVector.x = 0f;
+
+        //* NOTE: if bouncing from other player below the default x-vector might be a bit too strong. In that case check individually and apply a low x (maybe just velV.x * 0.5?)
+        // if (!_player.IsTouchingOtherPlayerDown && ( )
+        //     _velocityVector.x = 0f;
     }
 
     public override Enum Tick()
@@ -41,7 +43,7 @@ public class PlayerJumpState : PlayerState
         if (_player.IsTouchingCeiling && newPos.y > _player.Pos.y) newPos.y = _player.Pos.y;
 
         // Make sure the jump always tries to reach its peak before returning to a grounded state
-        if (_runTime > 0.15f && _player.IsTouchingGround && newPos.y < _player.Pos.y)
+        if (_runTime > 0.05f && _player.IsTouchingGround && newPos.y < _player.Pos.y)
         {   
             if (_velocityVector.x == 0)
                 return PlayerStateID.IDLE;
