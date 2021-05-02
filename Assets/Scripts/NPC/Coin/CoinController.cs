@@ -9,14 +9,10 @@ public class CoinController : NPCController
     public CoinData Data{get=>_data;}
     public int Points{get=>_data.Points;}
 
-    public CoinState CurrentState{get=> (CoinState) _stateMachine.CurrentState;}
-    public CoinStateID CurrentStateID{get => (CoinStateID) CurrentState.ID;}
-    public override string CurrentStateName{get => CurrentState.ToString();}
-    public bool IsCollect{get => CurrentStateID == CoinStateID.COLLECT;}
+    public CoinStateID CurrentCoinStateID{get => (CoinStateID) CurrentStateID;}
+    public bool IsCollect{get => CurrentCoinStateID == CoinStateID.COLLECT;}
 
     public bool CanBeCollected{get=> !IsCollect;}
-
-    StateMachine _stateMachine;
 
     struct AnimationHash
     {
@@ -26,9 +22,8 @@ public class CoinController : NPCController
         static int AtH(string s) => Animator.StringToHash(s);
     }
 
-    protected override void Awake()
-    {   
-        base.Awake();
+    protected override void InitializeStateMachine()
+    {
         var states = new List<State> 
         {
             new CoinMoveState(CoinStateID.MOVE, this, AnimationHash.Move), //! TODO Add AnimationHashes

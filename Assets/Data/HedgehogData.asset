@@ -15,8 +15,8 @@ MonoBehaviour:
   Name: Hedgehog
   PointsOnFlip: 10
   PointsOnKill: 800
-  MoveSpeed: 0.5
+  MoveSpeed: 1
   FlippedDuration: 5
   FlipVector: {x: 2, y: 4}
-  DieVector: {x: 0, y: 0}
+  DieVector: {x: 1, y: 2}
   MaxAnger: 3

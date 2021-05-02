@@ -169,9 +169,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56d97953fa082894b9fdba4e533f34a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _npcLayers:
-    serializedVersion: 2
-    m_Bits: 256
   _collisionController: {fileID: 502669937943514388}
 --- !u!212 &8507384804399572261
 SpriteRenderer:

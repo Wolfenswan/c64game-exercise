@@ -24,26 +24,23 @@ public class PlayerController : EntityController
     PlayerInput _playerInput;
     
     BoxCollider2D _mainCollider;
-    StateMachine _stateMachine;
 
 
     #region public field accessors
     public int ID {get => PlayerValues.ID;}
-    public override string CurrentStateName{get => _stateMachine.CurrentState.ToString();}
     public PlayerValues PlayerValues{get; private set;}
     public int MovementInput{get;private set;}
     public PlayerData Data{get => _data;}
-    public PlayerStateID CurrentStateID{get => (PlayerStateID) _stateMachine.CurrentState.ID;}
+    public PlayerStateID CurrentPlayerStateID{get => (PlayerStateID) CurrentStateID;}
     #endregion
 
     #region state check shorthands
-    public bool IsIdle{get => CurrentStateID == PlayerStateID.IDLE;}
-    public bool IsMove{get => CurrentStateID == PlayerStateID.MOVE;}
-    public bool IsSlide{get => CurrentStateID == PlayerStateID.SLIDE;}
-    public bool IsJump{get => CurrentStateID == PlayerStateID.JUMP;}
-    //public bool IsArcedJump{get => IsJump && (PlayerJumpState) _stateMachine.CurrentState.IsArced;}
-    public bool IsSpawn{get => CurrentStateID == PlayerStateID.SPAWN;}
-    public bool IsDie{get => CurrentStateID == PlayerStateID.DIE;}
+    public bool IsIdle{get => CurrentPlayerStateID == PlayerStateID.IDLE;}
+    public bool IsMove{get => CurrentPlayerStateID == PlayerStateID.MOVE;}
+    public bool IsSlide{get => CurrentPlayerStateID == PlayerStateID.SLIDE;}
+    public bool IsJump{get => CurrentPlayerStateID == PlayerStateID.JUMP;}
+    public bool IsSpawn{get => CurrentPlayerStateID == PlayerStateID.SPAWN;}
+    public bool IsDie{get => CurrentPlayerStateID == PlayerStateID.DIE;}
     #endregion
 
     #region collision detection shorthands
@@ -71,17 +68,6 @@ public class PlayerController : EntityController
     {   
         base.Awake();
 
-        var states = new List<State>
-        {
-            new PlayerIdleState(PlayerStateID.IDLE, this, AnimationHash.Idle),
-            new PlayerSpawnState(PlayerStateID.SPAWN, this, AnimationHash.Idle),
-            new PlayerMoveState(PlayerStateID.MOVE, this, AnimationHash.Move),
-            new PlayerJumpState(PlayerStateID.JUMP, this, AnimationHash.Jump),
-            new PlayerSlideState(PlayerStateID.SLIDE, this, AnimationHash.Slide),
-            new PlayerDieState(PlayerStateID.DIE, this, AnimationHash.Die),
-        };
-        _stateMachine = new StateMachine(states, PlayerStateID.SPAWN, Debugging);
-
         _playerInput = GetComponent<PlayerInput>();
         _gfxController = GetComponent<GFXController>();
         _mainCollider = GetComponent<BoxCollider2D>();
@@ -94,6 +80,20 @@ public class PlayerController : EntityController
     public void InitializePlayer(int id, PlayerValues playerValues = null)
     {
         PlayerValues = (playerValues==null)?new PlayerValues(id, _data.DefaultLives, 0, _data.BonusLiveTreshold):playerValues;
+    }
+
+    protected override void InitializeStateMachine()
+    {
+        var states = new List<State>
+        {
+            new PlayerIdleState(PlayerStateID.IDLE, this, AnimationHash.Idle),
+            new PlayerSpawnState(PlayerStateID.SPAWN, this, AnimationHash.Idle),
+            new PlayerMoveState(PlayerStateID.MOVE, this, AnimationHash.Move),
+            new PlayerJumpState(PlayerStateID.JUMP, this, AnimationHash.Jump),
+            new PlayerSlideState(PlayerStateID.SLIDE, this, AnimationHash.Slide),
+            new PlayerDieState(PlayerStateID.DIE, this, AnimationHash.Die),
+        };
+        _stateMachine = new StateMachine(states, PlayerStateID.SPAWN, Debugging);
     }
 
     void OnDisable() 
@@ -171,9 +171,17 @@ public class PlayerController : EntityController
         {
             var coin = other.gameObject.GetComponent<CoinController>();
             if (Debugging)
-                Debug.Log($"{this} touching {other.gameObject}.");
+                Debug.Log($"{this} touching {coin}.");
 
             if (coin.CanBeCollected) CollectCoin(coin);
+        }
+
+        if (other.gameObject.tag == "Flame" && other.gameObject.GetComponent<FlameController>().DoesHurt)
+        {
+            if (Debugging)
+                Debug.Log($"{this} touching {other.gameObject}.");
+                
+            Die();
         }
     }
     

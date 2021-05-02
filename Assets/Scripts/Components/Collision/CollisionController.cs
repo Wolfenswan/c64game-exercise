@@ -25,7 +25,7 @@ public class CollisionController : MonoBehaviour {
     Dictionary<CollisionType,bool> _collisionDict = new Dictionary<CollisionType,bool>(){};
 
     public GameObject AttachedTo {get => transform.parent.gameObject;}
-    public bool Initialized{get; set;} = false;
+    public bool Initialized{get; private set;} = false;
 
     void Awake() 
     {       

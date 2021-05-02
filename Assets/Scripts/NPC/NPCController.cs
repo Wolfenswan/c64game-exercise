@@ -1,4 +1,4 @@
-public abstract class NPCController : EntityController 
+public abstract class NPCController : EntityController
 {   
     public bool IsTouchingGround{get=>_collisions[CollisionType.GROUND];}
     public bool IsTouchingEntityFront{get=>(IsFacingRight && _collisions[CollisionType.ENTITY_RIGHT]) || (!IsFacingRight && _collisions[CollisionType.ENTITY_LEFT]);}

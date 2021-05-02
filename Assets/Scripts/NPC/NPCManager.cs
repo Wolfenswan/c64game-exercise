@@ -109,8 +109,7 @@ public class NPCManager : MonoBehaviour
         {
             newNPC.transform.parent = _enemyGrouping;
             _presentEnemies.Add(newNPC.GetComponent<EnemyController>());
-        }
-            
+        } 
         else if (newNPC.GetComponent<CoinController>())
         {
             newNPC.transform.parent = _coinGrouping;
@@ -121,6 +120,8 @@ public class NPCManager : MonoBehaviour
             newNPC.transform.parent = _flameGrouping;
             _presentFlames.Add(newNPC.GetComponent<FlameController>());
         }
+        
+        newNPC.name = $"{prefab.name} #{newNPC.GetInstanceID()}"; 
         _npcPlacementConveyor.Add(newNPC);
     }
 
@@ -128,7 +129,7 @@ public class NPCManager : MonoBehaviour
     {   
         var idx = UnityEngine.Random.Range(0, _spawnPositions.Count);
         npc.transform.position = (Vector2) spawnTr.position;
-        npc.GetComponent<NPCController>().UpdateFacing((int) spawnTr.localScale.x); // Alternative: use an edgecollider2d in the spawn so they'd turn around. But I kind of like this hacky solution.
+        npc.GetComponent<EntityController>().UpdateFacing((int) spawnTr.localScale.x); // Alternative: use an edgecollider2d in the spawn so they'd turn around. But I kind of like this hacky solution.
     }
 
     void CheckLevelDone()

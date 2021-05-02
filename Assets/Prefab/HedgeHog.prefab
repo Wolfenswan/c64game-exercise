@@ -180,7 +180,7 @@ GameObject:
   - component: {fileID: 8614634573939508611}
   - component: {fileID: 4345795164957013004}
   - component: {fileID: 7812346654055783792}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Spawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -430,7 +430,7 @@ GameObject:
   - component: {fileID: 3921355702068303458}
   - component: {fileID: 3921355702068303388}
   - component: {fileID: 3921355702068303389}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -507,7 +507,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3921355702278127204}
   - component: {fileID: 3921355702278127207}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: CollisionDetection
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -556,7 +556,7 @@ GameObject:
   - component: {fileID: 3921355703598080099}
   - component: {fileID: 3921355703598080029}
   - component: {fileID: 3921355703598080098}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Entity_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -634,7 +634,7 @@ GameObject:
   - component: {fileID: 1912264095857686006}
   - component: {fileID: 3523291194319655018}
   - component: {fileID: 6530539371294738258}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Entity_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
