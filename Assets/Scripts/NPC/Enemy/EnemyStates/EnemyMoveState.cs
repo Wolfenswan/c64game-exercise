@@ -12,12 +12,10 @@ public class EnemyMoveState : EnemyState
 
     public override Enum Tick() 
     {   
-        var direction = (int) _entity.Facing;
-        var speed = _entity.Data.MoveSpeed; // TODO once the value is final, move to constructor or declare as field
+        var speed = _entity.MoveSpeed * Time.deltaTime * (int) _entity.Facing; // TODO once the value is final, move to constructor or declare as field
+        _entity.MoveStep(speed, 0f);
 
-        _entity.MoveStep((speed * Time.deltaTime) * direction, 0f);
-
-        if (!_entity.IsTouchingGround && !_entity.IsTouchingSpawn)
+        if (!_entity.IsTouchingGround && !_entity.IsTouchingSpawnOrExit)
             return EnemyStateID.FALL;
 
         if (_doFlip)

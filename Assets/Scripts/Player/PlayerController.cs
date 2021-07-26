@@ -4,16 +4,21 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using NEINGames.Utilities;
+
+//! TODO StopAllCoroutines(); - maybe subscribe to GameManager; or use PlayerManager?
 
 public class PlayerController : EntityController
 {   
     // Static events subscribed to by classes unaware of the individual player objects (e.g. Enemy- & CoinController)
-    public static event Action<EnemyController, PlayerController> NPCFlipEvent; // Let subscribers know this enemy has been flipped
+    public static event Action<EnemyController, PlayerController> TryNPCFlipEvent; // Let subscribers know this enemy has been flipped
     public static event Action<EnemyController, PlayerController> EnemyKillEvent; // Let subscribers know this enemy has been killed
-    public static event Action<CoinController> CoinCollectEvent; // Let subscribers know this coin has been collected
+    public static event Action<CoinController, PlayerController> TryCoinCollectEvent; // Let subscribers know this coin has been collected
+    public static event Action<PlayerController> PowTriggeredEvent; // Let subsribers that POW has been triggered and by whom
 
     // Non-static events subscribed to by objects aware of the individual player objects (PlayerStates and PlayerManager)
     public event Action JumpEvent;
+    public event Action<PlayerController, Vector2> HopOtherPlayerEvent; //Sends hit player and contact point
     public event Action<PlayerController> PlayerRespawnEvent;
     public event Action<PlayerController> PlayerDeadEvent;
     public event Action<Vector2, PlayerController> MoveOtherPlayerEvent;
@@ -28,10 +33,10 @@ public class PlayerController : EntityController
 
     #region public field accessors
     public int ID {get => PlayerValues.ID;}
-    public PlayerValues PlayerValues{get; private set;}
-    public int MovementInput{get;private set;}
     public PlayerData Data{get => _data;}
     public PlayerStateID CurrentPlayerStateID{get => (PlayerStateID) CurrentStateID;}
+    public PlayerValues PlayerValues{get; private set;}
+    public int MovementInput{get;private set;}
     #endregion
 
     #region state check shorthands
@@ -41,17 +46,23 @@ public class PlayerController : EntityController
     public bool IsJump{get => CurrentPlayerStateID == PlayerStateID.JUMP;}
     public bool IsSpawn{get => CurrentPlayerStateID == PlayerStateID.SPAWN;}
     public bool IsDie{get => CurrentPlayerStateID == PlayerStateID.DIE;}
+    public bool CanHop{get => IsIdle || IsMove || IsSlide;}
     #endregion
 
     #region collision detection shorthands
-    public bool IsTouchingGround{get => _collisions[CollisionType.GROUND];}
-    public bool IsTouchingCeiling{get => _collisions[CollisionType.CEILING];}
-    public bool IsTouchingOtherPlayerFront{get => (Facing == EntityFacing.RIGHT && _collisions[CollisionType.PLAYER_RIGHT]) || (Facing == EntityFacing.LEFT && _collisions[CollisionType.PLAYER_LEFT]);}
-    public bool IsTouchingOtherPlayerDown{get => (_collisions[CollisionType.PLAYER_DOWN]);}
+    public bool IsTouchingGround{get => _collisions[CollisionID.GROUND];}
+    public bool IsTouchingCeiling{get => _collisions[CollisionID.CEILING];}
+    public bool IsTouchingEntityAbove{get => _collisions[CollisionID.ENTITY_ABOVE];}
+    //public bool IsTouchingOtherPlayerAbove{get => _collisions[CollisionID.PLAYER_ABOVE];}
+    public bool IsTouchingOtherPlayerFront{get => (Facing == EntityFacing.RIGHT && _collisions[CollisionID.PLAYER_RIGHT]) || (Facing == EntityFacing.LEFT && _collisions[CollisionID.PLAYER_LEFT]);}
+    public bool IsTouchingOtherPlayerDown{get => (_collisions[CollisionID.PLAYER_DOWN]);}
     #endregion
 
+    #region helpers & cooldowns
     int _collectionMultiplier = 1; // TODO add functionality. max is 5.
     bool _controlsEnabled = true;
+    bool _powOnCooldown = false;
+    #endregion
 
     struct AnimationHash
     {
@@ -69,17 +80,16 @@ public class PlayerController : EntityController
         base.Awake();
 
         _playerInput = GetComponent<PlayerInput>();
-        _gfxController = GetComponent<GFXController>();
         _mainCollider = GetComponent<BoxCollider2D>();
 
-        _gfxController.SetSpriteColor(_data.PlayerColors[ID]);
+        _gfxController.SetSpriteColor(_data.AvailableColors[ID]);
 
         StartCoroutine(WaitForCollisionController()); // Disables controls until the collisionController is fully functional
     }
 
     public void InitializePlayer(int id, PlayerValues playerValues = null)
     {
-        PlayerValues = (playerValues==null)?new PlayerValues(id, _data.DefaultLives, 0, _data.BonusLiveTreshold):playerValues;
+        PlayerValues = (playerValues==null)?new PlayerValues(id, _data.StartingLives, 0, _data.BonusLiveTreshold):playerValues;
     }
 
     protected override void InitializeStateMachine()
@@ -90,6 +100,7 @@ public class PlayerController : EntityController
             new PlayerSpawnState(PlayerStateID.SPAWN, this, AnimationHash.Idle),
             new PlayerMoveState(PlayerStateID.MOVE, this, AnimationHash.Move),
             new PlayerJumpState(PlayerStateID.JUMP, this, AnimationHash.Jump),
+            new PlayerHopState(PlayerStateID.HOP, this, AnimationHash.Jump),
             new PlayerSlideState(PlayerStateID.SLIDE, this, AnimationHash.Slide),
             new PlayerDieState(PlayerStateID.DIE, this, AnimationHash.Die),
         };
@@ -98,44 +109,28 @@ public class PlayerController : EntityController
 
     void OnDisable() 
     {
-        PlayerDisabledEvent?.Invoke(this);
+        PlayerDisabledEvent?.Invoke(this); // Lets PlayerManager know to unsubscribe from all PlayerController events
     }
 
-    protected override void Update() 
-    {   
-        base.Update();
-
-        if (!_collisionController.Initialized)
-            return;
-        
-        _collisions = _collisionController.UpdateCollisions();
-
-        _stateMachine.Tick(TickMode.UPDATE);    
-
-        // Delaying the resolve by one tick after updating the collisions gives better results when two players are colliding. 
-        // Which probably means I should make the detection more robust or frame-perfect; but then again, it works.
+    void FixedUpdate() 
+    {
         ResolveRaycasterCollisions(); 
     }
 
     #region movement and positioning
-
-    public void ReverseJumpDirection() => ((PlayerJumpState) _stateMachine.CurrentState).ReverseJumpDirection(); // Reversing the jump direction should not modify the facing
-
-    public void PlaceAtSpawn(Transform spawn) // Called by PlayerManager
+    public void SpawnAt(Transform spawn) // Called by PlayerManager
     {
         transform.position = (Vector2) spawn.position;
         UpdateFacing((int) spawn.localScale.x);
         StartCoroutine(SpawnFreeze());
     }
-    #endregion
 
-    #region input update - triggered by actions sent through PlayerInput component
+    // input updates are triggered by actions sent through PlayerInput component
     public void OnMove(InputAction.CallbackContext ctx) 
     {   
         MovementInput = _controlsEnabled?Mathf.Clamp((int) ctx.action.ReadValue<float>(),-1,1):0;
     }
 
-    //public void OnJump(InputAction.CallbackContext ctx) => JumpInput = _controlsEnabled?ctx.performed:false;
     public void OnJump(InputAction.CallbackContext ctx)
     {     
         if (_controlsEnabled && ctx.performed) JumpEvent?.Invoke();
@@ -143,88 +138,96 @@ public class PlayerController : EntityController
     #endregion
 
     #region collisions
-    
-    // The trigger is the default hitbox that deals with simply touching other entities, namely enemies & coins
-    // TODO might replace this with the raycast system.
+    // The trigger is the default hitbox that deals with touching other entities, namely enemies & coins
     void OnTriggerEnter2D(Collider2D other) 
     { 
-        if (IsDie)
-            return;
+        if (IsDie) return;
 
-        if (other.gameObject.tag == "Enemy")
-        {
-            var enemy = other.gameObject.GetComponent<EnemyController>();
-            
+        if (other.gameObject.TryGetComponent<EnemyController>(out EnemyController enemy) && enemy.CanKillPlayer)
+        {          
             if (Debugging)
                 Debug.Log($"{this} touching {enemy}.");
 
-            if (!enemy.IsDie)
-            {
-                if (enemy.IsFlipped)
-                    KillEnemy(enemy);
-                else
-                    Die();
-            }
+            if (enemy.IsFlipped)
+                EnemyKillEvent?.Invoke(enemy, this);
+            else
+                Die();
         }
         
-        if (other.gameObject.tag == "Coin")
+        if (other.gameObject.TryGetComponent<CoinController>(out CoinController coin) && coin.CanBeCollected)
         {
-            var coin = other.gameObject.GetComponent<CoinController>();
             if (Debugging)
                 Debug.Log($"{this} touching {coin}.");
 
-            if (coin.CanBeCollected) CollectCoin(coin);
+            TryCoinCollectEvent?.Invoke(coin, this);
         }
 
-        if (other.gameObject.tag == "Flame" && other.gameObject.GetComponent<FlameController>().DoesHurt)
+        if (other.gameObject.TryGetComponent<FlameController>(out FlameController flame) && flame.DoesHurt)
         {
             if (Debugging)
-                Debug.Log($"{this} touching {other.gameObject}.");
-                
+                Debug.Log($"{this} touching {flame}.");
+                  
             Die();
         }
     }
     
     void ResolveRaycasterCollisions()
     {
-        var canFlipEntity = IsJump && IsTouchingCeiling;
-        var canFlipEnemy = canFlipEntity && _collisions[CollisionType.ENEMY_ABOVE];
-        var canFlipCoin = canFlipEntity && _collisions[CollisionType.COIN_ABOVE];
+        if (IsDie) return;
+
+        var canBounceEntityAbove = IsJump && IsTouchingCeiling && _collisions[CollisionID.ENTITY_ABOVE];
+        var canPOW = !_powOnCooldown && IsJump && _collisions[CollisionID.POW];
+        //var canBouncePlayerAbove = IsJump && IsTouchingOtherPlayerAbove;
         var canBounceOffPlayerFront = !IsIdle && !IsDie && IsTouchingOtherPlayerFront;
         var canBounceOffPlayerBelow =!IsTouchingGround && IsTouchingOtherPlayerDown;
 
-        if (canFlipEnemy)
-        { // CanFlipEnemy detects if the player is hitting a platform from below while an enemy is standing on it
-            _collisionController
-                .GetLastCollisionHits(CollisionType.ENEMY_ABOVE).Distinct()
-                .Where(enemy => enemy.GetComponent<EnemyController>().CanBeFlipped).ToList()
-                .ForEach(enemy => TryFlipEnemy(enemy));
-        }
-
-        if (canFlipCoin)
+        if(canBounceEntityAbove)
         {
-            _collisionController
-                .GetLastCollisionHits(CollisionType.COIN_ABOVE).Distinct()
-                .Where(coin => coin.GetComponent<CoinController>().CanBeCollected).ToList()
-                .ForEach(coin => CollectCoin(coin.GetComponent<CoinController>()));
+            var entList = _collisionController.GetLastCollisionHits(CollisionID.ENTITY_ABOVE).Distinct();
+            foreach (var ent in entList)
+            {
+                if (ent.TryGetComponent<CoinController>(out CoinController coin))
+                {
+                    if (Debugging) Debug.Log($"{this} tries to collect {coin}");
+                    TryCoinCollectEvent?.Invoke(coin, this);
+                } else if(ent.TryGetComponent<EnemyController>(out EnemyController enemy))
+                {   
+                    if (Debugging) Debug.Log($"{this} tries to flip {enemy}");
+                    TryNPCFlipEvent?.Invoke(enemy, this);
+                } else if(ent.TryGetComponent<PlayerController>(out PlayerController otherPlayer))
+                {
+                    if (Debugging) Debug.Log($"{this} tries to bounce {otherPlayer}"); 
+
+                    if (otherPlayer.CanHop)
+                    {   
+                        HopOtherPlayerEvent?.Invoke(otherPlayer, Pos);
+                    } 
+                }               
+            }
         }
 
         if (canBounceOffPlayerBelow && canBounceOffPlayerFront)
             Debug.LogWarning($"[PlayerController #{ID}. Conflicting collisions: can bounce both front and down. Current State: {CurrentStateID}. Grounded: {IsTouchingGround}");
 
-        if (canBounceOffPlayerBelow)
-            _stateMachine.ForceState(PlayerStateID.JUMP);
+        if (canBounceOffPlayerBelow) _stateMachine.ForceState(PlayerStateID.JUMP);
         
         if (canBounceOffPlayerFront)
         {   
-            var type = Facing == EntityFacing.RIGHT?CollisionType.PLAYER_RIGHT:CollisionType.PLAYER_LEFT;
+            var type = Facing == EntityFacing.RIGHT?CollisionID.PLAYER_RIGHT:CollisionID.PLAYER_LEFT;
             var otherPC = _collisionController.GetLastCollisionHits(type).First().GetComponent<PlayerController>(); // Assumes there can only ever be one distinct player in front
 
-            if (!otherPC.IsDie)
-                ResolveFrontalBounce(otherPC);
+            if (!otherPC.IsDie) ResolveFrontalPlayerBounce(otherPC);
+        }
+
+        if (canPOW)
+        {
+            if (Debugging) Debug.Log($"POW activated by {this}");
+            PowTriggeredEvent?.Invoke(this);
+            StartCoroutine(PowCooldown());
         }
     }
-    void ResolveFrontalBounce(PlayerController otherPC)
+
+    void ResolveFrontalPlayerBounce(PlayerController otherPC)
     {   
         if (Debugging)
             Debug.Log($"Player #{ID}({CurrentStateID}), facing {Facing} bounced off player #{otherPC.ID}({otherPC.CurrentStateID}), facing {otherPC.Facing}.");
@@ -233,7 +236,7 @@ public class PlayerController : EntityController
         {   
             if (otherPC.IsIdle)
             {   
-                var pushVector = new Vector2(_data.MoveSpeed * Time.deltaTime * (int) Facing, 0f);
+                var pushVector = new Vector2(_data.MoveSpeed * (int) Facing, 0f);
                 MoveOtherPlayerEvent?.Invoke(pushVector, otherPC);
             } else if (otherPC.IsMove || otherPC.IsSlide || otherPC.IsJump)
             {
@@ -256,57 +259,53 @@ public class PlayerController : EntityController
             Debug.LogError($"[PlayerController #{ID}] Trying to bounce other player, from own unexpected state: {CurrentStateID}. Other state: {otherPC.CurrentStateID}");
         }
     }
+    #endregion
 
-    void CollectCoin(CoinController coin)
-    {          
-        if(Debugging)
-            Debug.Log($"{this} collects {coin}");
-
-        CoinCollectEvent?.Invoke(coin);
-        AddPoints(coin.Points);
-    }
-
-    void TryFlipEnemy(GameObject enemy)
-    {   
-        if(Debugging)
-            Debug.Log($"{this} trys to flip {enemy}.");
-
-        var ec = enemy.GetComponent<EnemyController>();
-        NPCFlipEvent?.Invoke(ec, this);
-        if(ec.GivePointsOnFlip) // TODO might not be the most robust method; experiment with receiving answering events from ec if point gain is odd
-            AddPoints(ec.FlipPoints);
-    }
-
-    void KillEnemy(EnemyController enemy)
-    {
-        EnemyKillEvent?.Invoke(enemy, this);
-        AddPoints(enemy.KillPoints * _collectionMultiplier);
-        // TODO start or reset collectionTimer coRoutine
-    }
-
+    #region interaction with other entities
     void Die()
     {
         _stateMachine.ForceState(PlayerStateID.DIE);
         PlayerValues.AddOrRemoveLive(-1);
-        _mainCollider.enabled = false;
         StartCoroutine(RespawnTimer());       
+    }
+
+    public void ForceToHop()
+    {
+        _stateMachine.ForceState(PlayerStateID.HOP);
+    }
+
+    public void AddPoints(int points, PointTypeID type)
+    {   
+        if (_data.PointTypesMultiplied[type]) 
+        {
+            points*=_collectionMultiplier;
+            StopCoroutine(CollectionMultiplierResetTimer()); // The cooldown could already be running from a prior point collection.
+            StartCoroutine(CollectionMultiplierResetTimer());
+        }
+        PlayerValues.UpdateScore(points);
     }
     #endregion
 
-    void AddPoints(int points) => PlayerValues.UpdateScore(points);
-
-    IEnumerator CollectionCountdown()
+    #region co-routines
+    IEnumerator CollectionMultiplierResetTimer()
     {   
-        // Start a short countdown to reset the selection multiplier afterwards
-        return null;
+        yield return new WaitForSeconds(_data.CollectionMultiplierResetAfter);
+        _collectionMultiplier = 1;
+    }
+
+    // In adherence to the original arcade game, pow cooldown is individual for each PlayerController so one player can only trigger POW once during their jump but multiple players could - in theory - trigger POW at the same time.
+    IEnumerator PowCooldown()
+    {   
+        _powOnCooldown = true;
+        yield return new WaitUntil(() => !IsJump);
+        _powOnCooldown = false;
     }
 
     IEnumerator RespawnTimer()
     {   
-        // Wait for a few seconds so the animation has played
-        //* Consider alternative: use a WaitUntil for player sprite to be out of camera or combine them; so it's waituntil -> wait 2 seconds
+        //* Consider alternative: use a WaitUntil for player to be out of camera or combine them; so it's waitUntil, then waitForSeconds
         if (Debugging)
-            Debug.Log($"{this} dies with currently {PlayerValues.Lives}");
+            Debug.Log($"{this} dies and has now {PlayerValues.Lives} lives left.");
         yield return new WaitForSeconds(_data.RespawnDelay);
         if (PlayerValues.Lives > 0)
             PlayerRespawnEvent.Invoke(this);
@@ -314,32 +313,36 @@ public class PlayerController : EntityController
             PlayerDeadEvent.Invoke(this);
     }
 
+    // The SpawnFreeze CoRoutine acts as buffer between player (re)spawning and retaking controls. Mainly it prevents button presses being read as input when it is not intended.
     IEnumerator SpawnFreeze()
     {   
         var tick = Time.time;
         StartCoroutine(InputBuffer());
-        yield return new WaitUntil(() => _controlsEnabled && _mainCollider != null && _stateMachine != null);
+        yield return new WaitUntil(() => _controlsEnabled && _mainCollider != null && _stateMachine != null); // The null checks are safety measures to make sure Player Object has been fully initialized
         if (Debugging) Debug.Log($"{this} player controls free.");
         _stateMachine.ForceState(PlayerStateID.SPAWN);
-        _mainCollider.enabled = false;
+        //_mainCollider.enabled = false;
         yield return new WaitUntil(() => !IsSpawn);
         if (Debugging) Debug.Log($"{this} unlocked.");
-        _mainCollider.enabled = true; // Disabled by the death-state
+        //_mainCollider.enabled = true;
     }
 
+    // A button press used to join the game should not directly translate into movement
+    // thus this coroutine prevents registering movement input for a frame
     IEnumerator InputBuffer()
     {   
-        // Prevents registering movement input for a frame, e.g. when spawning players
         _controlsEnabled = false;
         yield return new WaitForEndOfFrame();
         _controlsEnabled = true;
     }
     
+    // Due to Unity's initialization structure, the InputSystem could send commands to PlayerController before the CollisionController sub-component is fully initialized.
+    // This coroutine makes sure that controls are only accepted after the CollisionController has finished its setup.
     IEnumerator WaitForCollisionController()
     {   
-         // Prevents registering movement input for a frame, e.g. when spawning players
         _controlsEnabled = false;
         yield return new WaitUntil(() => _collisionController.Initialized);
         _controlsEnabled = true;
     }
+    #endregion
 }

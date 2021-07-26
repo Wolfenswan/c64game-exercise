@@ -4,5 +4,6 @@ using UnityEngine;
 public class CoinData : ScriptableObject
 {
     public float MoveSpeed;
+    public float CollectUpwardsStrength;
     public int Points = 800;
 }

@@ -11,6 +11,9 @@ TagManager:
   - NPCManager
   - PlayerManager
   - NPCSpawn
+  - Flame
+  - FlameSpawn
+  - POW
   layers:
   - Default
   - TransparentFX
@@ -24,7 +27,7 @@ TagManager:
   - NPCSpawn
   - Enemy
   - Coin
-  - 
+  - POW
   - 
   - 
   - 

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4711533557657109339}
   - component: {fileID: 31492879809331575}
-  - component: {fileID: 3286836408689924223}
+  - component: {fileID: 2720272088814968120}
   m_Layer: 0
   m_Name: NPC_Above
   m_TagString: Untagged
@@ -54,7 +54,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &3286836408689924223
+--- !u!114 &2720272088814968120
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -63,21 +63,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 3971220031557992617}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 10
+  CollisionID: 8
   _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 3072
   _direction: 3
-  _bounds: {fileID: 31492879809331575}
   _distance: 0.15
-  _numberOfRays: 8
+  _numberOfRays: 4
   _filterSelf: 1
-  _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _showDebugRays: 0
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &7227047476714380061
 GameObject:
   m_ObjectHideFlags: 0
@@ -87,7 +86,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2473854026295290255}
-  - component: {fileID: 502669937943514388}
+  - component: {fileID: 8964022282649874718}
   m_Layer: 0
   m_Name: CollisionDetection
   m_TagString: Untagged
@@ -110,7 +109,7 @@ Transform:
   m_Father: {fileID: 8507384804399572266}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &502669937943514388
+--- !u!114 &8964022282649874718
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -119,7 +118,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7227047476714380061}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55a466c7593ff684b8b5c589023a6d8e, type: 3}
+  m_Script: {fileID: 11500000, guid: fd2629cf558e6c94d8159658291407ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _debugLog: 0
@@ -169,7 +168,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56d97953fa082894b9fdba4e533f34a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _collisionController: {fileID: 502669937943514388}
+  _collisionController: {fileID: 8964022282649874718}
 --- !u!212 &8507384804399572261
 SpriteRenderer:
   m_ObjectHideFlags: 0

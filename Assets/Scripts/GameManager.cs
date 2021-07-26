@@ -8,50 +8,49 @@ public class GameManager : Singleton<GameManager>
 {
     public event Action<LevelData> LevelChangeEvent;
     public event Action LevelStartedEvent;
+    public event Action<int> UpdatePowState;
 
     [SerializeField] GameData _data;
     [SerializeField] int _currentLevelID = 1;
     
     List<LevelData> _levels = new List<LevelData>();
     NPCManager _npcManager;
-    //PlayerManager _playerManager;
 
     public GameData Data{get => _data;}
     public LevelData CurrentLevelData{get => _levels.Single(data => data.LevelID == _currentLevelID);}
+    public int PowLeft{get; private set;} = 2; // Carries over from level to level and is reset every second bonus level
 
     void Awake() 
     {   
-        InitializeSingleton(this); // Might need additional check
-        _npcManager = GameObject.FindGameObjectWithTag("NPCManager").GetComponent<NPCManager>(); // FIND
-        //_playerManager = GameObject.FindGameObjectWithTag("PlayerManager").GetComponent<PlayerManager>();; // FIND
+        InitializeSingleton(this);
+        _npcManager = GameObject.FindGameObjectWithTag("NPCManager").GetComponent<NPCManager>();
         _levels = _data.Levels;
-        // CONSIDER create NPCManager & PlayerManager programmatically as children of GameManager
+        //* CONSIDER create NPCManager & PlayerManager programmatically as children of GameManager
     }
 
     void Start() 
     {
         PlayerManager.Instance.AllPlayersKilledEvent += PlayerManager_AllPlayersKilledEvent;
-        
+        PlayerManager.Instance.PlayersTriggerPowEvent += PlayerManager_PowTriggeredEvent;
         _npcManager.AllEnemiesRemovedEvent += NPCManager_AllEnemiesRemovedEvent;
-        StartLevel();
-    }
 
-    void OnEnable() 
-    {
+        StartLevel(_currentLevelID);
     }
 
     void OnDisable() 
     {
         PlayerManager.Instance.AllPlayersKilledEvent -= PlayerManager_AllPlayersKilledEvent;
-
+        PlayerManager.Instance.PlayersTriggerPowEvent -= PlayerManager_PowTriggeredEvent;
         _npcManager.AllEnemiesRemovedEvent -= NPCManager_AllEnemiesRemovedEvent;
     }
 
-    void StartLevel()
+    void StartLevel(int id)
     {   
         TogglePause(true);
         LevelChangeEvent?.Invoke(CurrentLevelData);
+        UpdatePowState?.Invoke(PowLeft);
         // Play music jingle
+        // Wait till jingle has played
         TogglePause(false); // TODO maybe requires coroutine & waitUntil properly loaded; waiting for PlayerManager & NPCManager to sent a done signal
         LevelStartedEvent?.Invoke(); 
         
@@ -59,11 +58,11 @@ public class GameManager : Singleton<GameManager>
 
     void EndLevel()
     {
-        // Play Jingle
         TogglePause(true);
+        // TODO Play Jingle
         _currentLevelID++;
-        LevelChangeEvent(CurrentLevelData);
-        TogglePause(false); // TODO again, probably coroutine required to make sure the audio plays; then set TimeScale to 0 and to 1 again after the level change
+        // Wait till Jingle has played
+        // StartLevel(CurrentLevelData.ID);
     }
 
     void GameOver()
@@ -75,7 +74,20 @@ public class GameManager : Singleton<GameManager>
 
     void TogglePause(bool pauseEnabled) => Time.timeScale = pauseEnabled?0:1;
 
+    void TogglePause() => Time.timeScale = Time.timeScale == 0?1:0;
+
     void PlayerManager_AllPlayersKilledEvent()=> GameOver();
+
+    void PlayerManager_PowTriggeredEvent()
+    {
+        PowLeft = Mathf.Clamp(PowLeft-1, 0, 2);
+        
+        if(PowLeft >= 0)
+        {
+            // TODO Camera Shake
+            UpdatePowState?.Invoke(PowLeft);
+        }
+    }
 
     void NPCManager_AllEnemiesRemovedEvent() => EndLevel();
     

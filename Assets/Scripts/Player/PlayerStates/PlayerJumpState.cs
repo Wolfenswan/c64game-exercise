@@ -5,8 +5,54 @@ public class PlayerJumpState : PlayerState
 {   
     public PlayerJumpState(PlayerStateID id, PlayerController player, int animationHash) : base(id, player, animationHash){}
 
-    Vector2 _velocityVector;
+    protected Vector2 _velocityVector;
     bool _wasBounced;
+    bool _hasPeaked;
+
+    public override void OnEnter(Enum fromState)
+    {
+        base.OnEnter(fromState);
+
+        _wasBounced = false;
+        _hasPeaked = false;
+
+        _velocityVector = _player.Data.JumpForceVector;
+
+        if ((PlayerStateID) fromState == PlayerStateID.IDLE || ((PlayerStateID) fromState == PlayerStateID.SPAWN && _player.MovementInput == 0))
+            _velocityVector.x = 0f;
+        else
+            _velocityVector.x *= (int) _player.Facing;        
+    }
+
+    public override Enum Tick()
+    {   
+        if (_runTime > 0.05f && _player.IsTouchingGround && _hasPeaked)
+        {   
+            if (_velocityVector.x == 0)
+                return PlayerStateID.IDLE;
+            else
+            {
+                if (_wasBounced) _player.ReverseFacing(); // Bouncing from another player while mid-air does not reverse the facing during the jump, that's why it needs to abdjusted upon landing
+                return PlayerStateID.SLIDE;
+            }
+        }
+        
+        var jumpVector = _velocityVector * Time.deltaTime;
+
+        if (!_hasPeaked && (_player.IsTouchingCeiling || _player.IsTouchingEntityAbove || jumpVector.y <= 0)) _hasPeaked = true;
+
+        if (_player.IsTouchingCeiling && jumpVector.y > 0) jumpVector.y = 0; // Prevent the player from jumping through platforms by resetting the y-force
+
+        _player.MoveStep(jumpVector);
+
+        // Apply gravity to reduce velocity next tick
+        if (!_hasPeaked)
+            _velocityVector += _gravityVector * Time.deltaTime;
+        else // After the jump has peaked - either through application of the gravityVector or by hitting a ceiling, start apply a tiny bit of extra force each tick to accelerate the fall
+            _velocityVector += _gravityVector * _player.Data.FallSpeedMultiplier * Time.deltaTime;
+
+        return null;
+    }
 
     public void ReverseJumpDirection() 
     {   
@@ -15,49 +61,5 @@ public class PlayerJumpState : PlayerState
             
         _velocityVector.Set(_velocityVector.x * -1 , _velocityVector.y);
         _wasBounced = true;
-    }
-
-    public override void OnEnter(Enum fromState)
-    {
-        base.OnEnter(fromState);
-
-        _wasBounced = false;
-
-        _velocityVector = _player.Data.JumpVector; // TODO move to constructor / field once finalized
-        _velocityVector.x *= (int) _player.Facing;
-
-        if ((PlayerStateID) fromState == PlayerStateID.IDLE || ((PlayerStateID) fromState == PlayerStateID.SPAWN && _player.MovementInput == 0))
-            _velocityVector.x = 0f;
-
-        //* NOTE: if bouncing from other player below the default x-vector might be a bit too strong. In that case check individually and apply a low x (maybe just velV.x * 0.5?)
-        // if (!_player.IsTouchingOtherPlayerDown && ( )
-        //     _velocityVector.x = 0f;
-    }
-
-    public override Enum Tick()
-    {   
-        var speed = _player.Data.JumpSpeed * Time.deltaTime; // TODO move to constructor / field once finalized
-        var newPos = _player.Pos + _velocityVector * speed;  
-
-        // Prevent player from jumping through the ceiling by sliding them along beneath it
-        if (_player.IsTouchingCeiling && newPos.y > _player.Pos.y) newPos.y = _player.Pos.y;
-
-        // Make sure the jump always tries to reach its peak before returning to a grounded state
-        if (_runTime > 0.05f && _player.IsTouchingGround && newPos.y < _player.Pos.y)
-        {   
-            if (_velocityVector.x == 0)
-                return PlayerStateID.IDLE;
-            else
-            {
-                if (_wasBounced) _player.ReverseFacing();
-                return PlayerStateID.SLIDE;
-            }
-                
-        }
-
-        _player.transform.position = newPos;
-        _velocityVector += _gravityVector * speed;
-
-        return null;
     }
 }

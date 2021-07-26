@@ -16,7 +16,7 @@ public class EnemyFallState : EnemyState
 
     public override Enum Tick()
     {   
-        var speedX = _entity.Data.MoveSpeed * Time.deltaTime * (int) _entity.Facing; // TODO move data-call to constructor once finalized
+        var speedX = _entity.MoveSpeed * Time.deltaTime * (int) _entity.Facing;
         var speedY = _gravityVector.y * Time.deltaTime;
         _entity.MoveStep(speedX, speedY);
         

@@ -3,38 +3,48 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using NEINGames.Extensions;
 
-// TODO create flames independent from spawn-loop
+//! TODO StopAllCoroutines(); as necessary
 
 public class NPCManager : MonoBehaviour
-{
+{   
+    public static event Action<int, PlayerController, PointTypeID> GivePointsEvent; // Parameters are amount of points, receiving player and the type-ID of the given point
     public event Action AllEnemiesRemovedEvent;
-    
-    [SerializeField] GameData _data;
+
+    [SerializeField] bool _debugging;
+    [SerializeField] bool _spawningEnemies;
+    [SerializeField] bool _spawningFlames;
+    [SerializeField] GameData _gameData;
+    [SerializeField] FlameData _flameData;
     [SerializeField] GameObject _coinPrefab;
+    [SerializeField] GameObject _flamePrefab;
 
     LevelData _currentLevelData = null;
     List<EnemyPrefabContainer> _newEnemiesToSpawn = new List<EnemyPrefabContainer>(); // Set on reaction to LevelChangeEvent triggered from the GameManager Singleton
-    List<EnemyController> _presentEnemies = new List<EnemyController>();
-    List<CoinController> _presentCoins = new List<CoinController>();
-    List<FlameController> _presentFlames = new List<FlameController>();
+    public List<EnemyController> PresentEnemies{get;private set;} = new List<EnemyController>();
+    public List<CoinController> PresentCoins{get;private set;} = new List<CoinController>();
+    public List<FlameController> PresentFlames{get;private set;} = new List<FlameController>();
 
-    List<NPCSpawnController> _spawnPositions = new List<NPCSpawnController>();
+    List<NPCSpawnController> _npcSpawnControllers = new List<NPCSpawnController>();
+    List<FlameSpawnController> _flameSpawnControllers = new List<FlameSpawnController>();
     List<GameObject> _npcPlacementConveyor = new List<GameObject>(); // Required to prevent coins and enemies from clogging up the spawn points when spawning at the same time
 
+    // These are only used for sorting purposes in the editor window. The NPC-GameObjects are created as children of their respective sorting.
     Transform _enemyGrouping;
     Transform _coinGrouping;
     Transform _flameGrouping;
 
     #region shorthands
-    bool hasActiveEnemies{get=>_presentEnemies.Count > 0;}
-    bool isFinishedSpawning{get=>_newEnemiesToSpawn.Count == 0;}
+    bool _hasActiveEnemies{get=>PresentEnemies.Count > 0;}
+    bool _isFinishedSpawning{get=>_newEnemiesToSpawn.Count == 0;}
     #endregion
 
     void Awake() 
     {
-        _spawnPositions = transform.Find("Spawns").gameObject.GetChildrenWithTag("NPCSpawn").Select(g => g.GetComponent<NPCSpawnController>()).ToList();
+        // _npcSpawnPositions = transform.Find("NPCSpawns").gameObject.GetChildrenWithTag("NPCSpawn").Select(g => g.GetComponent<NPCSpawnController>()).ToList();
+        //_flameSpawnControllers = transform.Find("FlameSpawns").gameObject.GetChildrenWithTag("FlameSpawn").Select(g => g.GetComponent<FlameSpawnController>()).ToList();
+        _npcSpawnControllers = gameObject.GetComponentsInChildren<NPCSpawnController>().ToList();
+        _flameSpawnControllers = gameObject.GetComponentsInChildren<FlameSpawnController>().ToList();
 
         _enemyGrouping = transform.Find("Enemies");
         _coinGrouping = transform.Find("Coins");
@@ -43,11 +53,14 @@ public class NPCManager : MonoBehaviour
 
     void Start() 
     {
-        PlayerController.NPCFlipEvent += PlayerController_EnemyFlipEvent;
+        PlayerController.TryNPCFlipEvent += PlayerController_TryEnemyFlipEvent;
         PlayerController.EnemyKillEvent += PlayerController_EnemyKillEvent;
-        PlayerController.CoinCollectEvent += PlayerController_CoinCollectEvent;
+        PlayerController.TryCoinCollectEvent += PlayerController_TryCoinCollectEvent;
+        PlayerController.PowTriggeredEvent += PlayerController_PowTriggeredEvent;
 
         NPCExitController.NPCExitTeleportEvent += NPCExitController_NPCExitTeleportEvent;
+
+        PlayerManager.Instance.NewPlayerJoinedEvent += PlayerManager_NewPlayerJoinedEvent;
 
         GameManager.Instance.LevelChangeEvent += GameManager_LevelChangeEvent;
         GameManager.Instance.LevelStartedEvent += GameManager_LevelStartedEvent;
@@ -55,11 +68,14 @@ public class NPCManager : MonoBehaviour
 
     void OnDisable() 
     {
-        PlayerController.NPCFlipEvent -= PlayerController_EnemyFlipEvent;
+        PlayerController.TryNPCFlipEvent -= PlayerController_TryEnemyFlipEvent;
         PlayerController.EnemyKillEvent -= PlayerController_EnemyKillEvent;
-        PlayerController.CoinCollectEvent -= PlayerController_CoinCollectEvent;
+        PlayerController.TryCoinCollectEvent -= PlayerController_TryCoinCollectEvent;
+        PlayerController.PowTriggeredEvent -= PlayerController_PowTriggeredEvent;
 
         NPCExitController.NPCExitTeleportEvent -= NPCExitController_NPCExitTeleportEvent;
+
+        PlayerManager.Instance.NewPlayerJoinedEvent -= PlayerManager_NewPlayerJoinedEvent;
 
         GameManager.Instance.LevelChangeEvent -= GameManager_LevelChangeEvent;
         GameManager.Instance.LevelStartedEvent -= GameManager_LevelStartedEvent;
@@ -68,113 +84,159 @@ public class NPCManager : MonoBehaviour
     void Update() 
     {   
         // TODO experiment with while loop
-        if (_npcPlacementConveyor.Count > 0 && _spawnPositions.Count(p => !p.IsOccupied) > 0)
+        if (_spawningEnemies && _npcPlacementConveyor.Count > 0 && _npcSpawnControllers.Count(p => !p.IsOccupied) > 0)
         {   
             // Activate the first NPC waiting in line at a random free spawn position
-            var filtered = _spawnPositions.Where(p => !p.IsOccupied).ToList();
-            var spawn = filtered[UnityEngine.Random.Range(0, filtered.Count)].transform;
-            SetNPCPosition(_npcPlacementConveyor[0], spawn);
+            var filtered = _npcSpawnControllers.Where(p => !p.IsOccupied).ToList();
+            var spawnTransform = filtered[UnityEngine.Random.Range(0, filtered.Count)].transform;
+            SetNPCPosition(_npcPlacementConveyor[0], spawnTransform);
             _npcPlacementConveyor[0].SetActive(true);
             _npcPlacementConveyor.RemoveAt(0);
         }
     }
 
-    IEnumerator EnemySpawnLoop(int levelID) // Starts once the GameManager raises the LevelStartedEvent
+    void LateUpdate() 
     {
-        var spawnDelay = _data.SpawnDelay; // TODO move to awake
-        Debug.Log(levelID + " // " + _currentLevelData.LevelID + " // " + isFinishedSpawning);
-        while (levelID == _currentLevelData.LevelID && !isFinishedSpawning)
+        // During late update we check if all enemies have been killed, start the cleanup process and raise the event to alert the GameManager that the level is done
+        // TODO might be slightly too fast and a very short delay after killing the final enemy desireable gameplay-wise. Will require testing
+        // TODO will later require a special check for bonus stages
+        if(!_hasActiveEnemies && _isFinishedSpawning)
+        {   
+            StopAllCoroutines();
+            DestroyAllNPC();
+            AllEnemiesRemovedEvent?.Invoke();
+        }
+    }
+
+    // The enemy spawn loop starts once the GameManager raises the LevelStartedEvent
+    // and instantiates as well as places all enemy-prefabs provided via LevelData with random delays in between
+    IEnumerator EnemySpawnLoop(int levelID)
+    {
+        var spawnDelay = _gameData.SpawnDelay; //* CONSIDER - randomize?
+        while (!_isFinishedSpawning)
         {
             yield return new WaitForSeconds(spawnDelay);
-            if (levelID == _currentLevelData.LevelID) // Double check to make sure the level hasn't changed within the last spawn delay
-            {   
-                var idx = UnityEngine.Random.Range(0, _newEnemiesToSpawn.Count);
-                var enemyPrefabData = _newEnemiesToSpawn[idx];
-                SpawnNPC(enemyPrefabData.Prefab);
-                enemyPrefabData.Count -= 1;
-                if (enemyPrefabData.Count == 0)
-                    _newEnemiesToSpawn.Remove(_newEnemiesToSpawn[idx]);
-            }     
+            var idx = UnityEngine.Random.Range(0, _newEnemiesToSpawn.Count);
+            var enemyPrefabData = _newEnemiesToSpawn[idx];
+            InstantiateNPC(enemyPrefabData.Prefab);
+            enemyPrefabData.Count -= 1;
+            if (enemyPrefabData.Count == 0)
+                _newEnemiesToSpawn.Remove(_newEnemiesToSpawn[idx]);
         }     
     }
 
-    void SpawnNPC(GameObject prefab)
+    // Flames are created independently from the enemy spawn loop and are tied to each existing player
+    // They dont start spawning right away, but are meant to punish players taking too long in a given level
+    // There is never more than one flame on a given level. If a flame should spawn it is skipped instead.
+    IEnumerator FlameSpawnLoop(int levelID, PlayerController player)
+    {   
+        yield return new WaitForSeconds(_flameData.FirstFlameDelay);
+        while (player != null)
+        {   
+
+            var delay = _flameData.FlameSpawnDelayRange.RandomIntInclusive;
+            yield return new WaitForSeconds(delay);
+            yield return new WaitUntil(() => _spawningFlames);
+            //yield return new WaitUntil(() => !player.IsJump); //* CONSIDER
+            
+            var spawnController = _flameSpawnControllers.OrderBy(fsc => Mathf.Abs(fsc.YLevel - player.Pos.y)).First();
+
+            if (spawnController.ActiveFlame == null) // Prevent spawning a flame on the same level if there's already a flame present.
+            {   
+                var newFlame = InstantiateNPC(_flamePrefab);       
+                spawnController.ActiveFlame = newFlame;                       
+                newFlame.transform.position = spawnController.GetSpawn(player);
+                newFlame.GetComponent<FlameController>().SetFacingTowards(player);
+                newFlame.SetActive(true);
+            }
+
+            yield return new WaitUntil(() => spawnController.ActiveFlame == null || player == null); // Wait until that flame has been destroyed or the player has been removed before resuming the spawn loop
+        }
+    }
+
+    GameObject InstantiateNPC(GameObject prefab)
     {
         GameObject newNPC = GameObject.Instantiate(prefab);
         newNPC.SetActive(false);
 
-        Debug.Log($"Spawned {newNPC}");
+        if(_debugging) Debug.Log($"{this} spawned {newNPC}");
 
-        if (newNPC.GetComponent<EnemyController>())
+        if (newNPC.TryGetComponent<EnemyController>(out EnemyController enemy))
         {
             newNPC.transform.parent = _enemyGrouping;
-            _presentEnemies.Add(newNPC.GetComponent<EnemyController>());
+            PresentEnemies.Add(enemy);
+            _npcPlacementConveyor.Add(newNPC);
         } 
-        else if (newNPC.GetComponent<CoinController>())
+        else if (newNPC.TryGetComponent<CoinController>(out CoinController coin))
         {
             newNPC.transform.parent = _coinGrouping;
-            _presentCoins.Add(newNPC.GetComponent<CoinController>());
+            PresentCoins.Add(coin);
+            _npcPlacementConveyor.Add(newNPC);
         }
-        else if (newNPC.GetComponent<FlameController>())
+        else if (newNPC.TryGetComponent<FlameController>(out FlameController flame))
         {   
             newNPC.transform.parent = _flameGrouping;
-            _presentFlames.Add(newNPC.GetComponent<FlameController>());
+            PresentFlames.Add(flame);
         }
         
         newNPC.name = $"{prefab.name} #{newNPC.GetInstanceID()}"; 
-        _npcPlacementConveyor.Add(newNPC);
+
+        return newNPC;
     }
 
     void SetNPCPosition(GameObject npc, Transform spawnTr)
     {   
-        var idx = UnityEngine.Random.Range(0, _spawnPositions.Count);
+        var idx = UnityEngine.Random.Range(0, _npcSpawnControllers.Count);
         npc.transform.position = (Vector2) spawnTr.position;
         npc.GetComponent<EntityController>().UpdateFacing((int) spawnTr.localScale.x); // Alternative: use an edgecollider2d in the spawn so they'd turn around. But I kind of like this hacky solution.
     }
 
-    void CheckLevelDone()
-    {
-        if(!hasActiveEnemies && isFinishedSpawning)
-        {
-            DestroyAllNPC(); // Remove all remaining coins & flames
-            AllEnemiesRemovedEvent?.Invoke();
-        }
-        else
-        {
-            SpawnNPC(_coinPrefab); // TODO probably as coroutine with delay
-            if(_presentEnemies.Count == 1 && isFinishedSpawning)
-                _presentEnemies[0].IncreaseAnger(99);
-        }
-    }
-
     void DestroyAllNPC()
     {
-        foreach (var item in _presentEnemies)
+        foreach (var item in PresentEnemies)
         {
             item.Delete();
         }
 
-        foreach (var item in _presentCoins)
+        foreach (var item in PresentCoins)
         {
             item.Delete();
         }
 
-        foreach (var item in _presentFlames)
+        foreach (var item in PresentFlames)
         {
             item.Delete();
         }
 
-        _presentEnemies.Clear();
-        _presentCoins.Clear();
-        _presentFlames.Clear();
+        PresentEnemies.Clear();
+        PresentCoins.Clear();
+        PresentFlames.Clear();
+    }
+
+    void TryCollectCoin(CoinController coinCollected, PlayerController byPlayer)
+    {
+        if (!coinCollected.CanBeCollected) return;
+
+        coinCollected.OnCollect();
+        GivePointsEvent?.Invoke(coinCollected.Points, byPlayer, PointTypeID.COIN);
+        PresentCoins.Remove(coinCollected);
+    }
+
+    void TryFlipEnemy(EnemyController enemyHit, PlayerController byPlayer, bool ignoreVector=false)
+    {
+        if(_debugging) Debug.Log($"Received flip event for {enemyHit}.");
+
+        if(!enemyHit.CanBeFlipped) return;
+
+        var contactPoint = ignoreVector?Vector2.zero:(Vector2) byPlayer.Pos;
+        enemyHit.OnFlip(contactPoint);
+        if (enemyHit.GivePointsOnFlip) GivePointsEvent?.Invoke(enemyHit.FlipPoints, byPlayer, PointTypeID.FLIP);
     }
 
     #region event reactions
-    void PlayerController_EnemyFlipEvent(EnemyController enemyHit, PlayerController byPlayer)
-    {   
-        Debug.Log($"Received flip event for {enemyHit}.");
-        enemyHit.OnFlip((Vector2) byPlayer.Pos);
-    }
+    void PlayerController_TryEnemyFlipEvent(EnemyController enemyHit, PlayerController byPlayer) => TryFlipEnemy (enemyHit, byPlayer);
+
+    void PlayerController_TryCoinCollectEvent(CoinController coinCollected, PlayerController byPlayer) => TryCollectCoin(coinCollected, byPlayer);
 
     void PlayerController_EnemyKillEvent(EnemyController enemyHit, PlayerController byPlayer)
     {   
@@ -185,36 +247,44 @@ public class NPCManager : MonoBehaviour
         }
 
         enemyHit.OnDead((Vector2) byPlayer.Pos);
-        _presentEnemies.Remove(enemyHit);
+        GivePointsEvent?.Invoke(enemyHit.KillPoints, byPlayer, PointTypeID.KILL);
+        PresentEnemies.Remove(enemyHit);
 
-        CheckLevelDone();
+        if (_hasActiveEnemies)
+            InstantiateNPC(_coinPrefab); //* CONSIDER using coroutine to add a delay to the spawn
+        
+        if(PresentEnemies.Count == 1 && _isFinishedSpawning)
+            PresentEnemies[0].IncreaseAnger(99); // If only one enemy is left, they are always set to their highest anger level
     }
 
-    void PlayerController_CoinCollectEvent(CoinController coinCollected)
-    {   
-        coinCollected.OnCollect();
-        _presentCoins.Remove(coinCollected);
+    void PlayerController_PowTriggeredEvent(PlayerController triggeringPlayer)
+    {
+        PresentEnemies.ForEach(enemy => TryFlipEnemy(enemy, triggeringPlayer));
+        PresentCoins.ForEach(coin => TryCollectCoin(coin, triggeringPlayer));
+        PresentFlames.ForEach(flame => flame.Delete());
     }
+
+    void PlayerManager_NewPlayerJoinedEvent(PlayerController player) => StartCoroutine(FlameSpawnLoop(_currentLevelData.LevelID, player));
 
     void NPCExitController_NPCExitTeleportEvent(GameObject npc) 
     {
         npc.SetActive(false);
         if(npc.TryGetComponent<CoinController>(out CoinController coin))
         {
-            _presentCoins.Remove(coin);
+            PresentCoins.Remove(coin);
             Destroy(npc);
         } else 
         {
             _npcPlacementConveyor.Add(npc);
         }
-    } 
+    }
 
     void GameManager_LevelChangeEvent(LevelData data) 
     {
-        if (!isFinishedSpawning)
+        if (!_isFinishedSpawning)
             Debug.LogError("Level change triggered despite enemies left to spawn");
         
-        if (_presentEnemies.Count > 0)
+        if (PresentEnemies.Count > 0)
             Debug.LogError("Level change triggered despite active enemies left.");
 
         _currentLevelData = data;
@@ -222,9 +292,7 @@ public class NPCManager : MonoBehaviour
         _currentLevelData.EnemiesToSpawn.ForEach(container => _newEnemiesToSpawn.Add(new EnemyPrefabContainer(container))); // Clone the prefab-list to avoid references
     }
 
-    void GameManager_LevelStartedEvent()
-    {
-        StartCoroutine(EnemySpawnLoop(_currentLevelData.LevelID));
-    }
+    void GameManager_LevelStartedEvent() => StartCoroutine(EnemySpawnLoop(_currentLevelData.LevelID));
+    
     #endregion
 }

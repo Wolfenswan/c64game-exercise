@@ -5,17 +5,28 @@ public class FlameMoveState : FlameState
 {
 
     public FlameMoveState(FlameStateID id, FlameController entity, int animationHash, bool doesHurt = true) : base(id, entity, animationHash, doesHurt){}
+    
+    float _tick;
+    bool _bouncing;
+
+    // TODO maybe just use a bezierCurve?
+
+    public override void OnEnter(Enum fromState)
+    {
+        base.OnEnter(fromState);
+
+        _tick = 0f;
+        _bouncing = false;
+    }
 
     public override Enum Tick() 
     {   
-        var direction = (int) _entity.Facing;
-        var speedX = _entity.Data.MoveSpeed * Time.deltaTime * direction; // TODO once the value is final, move to constructor or declare as field
-        var speedY = 0f;
+        var speed = _entity.Data.MoveSpeed * Time.deltaTime * (int) _entity.Facing; // TODO once the value is final, move to constructor or declare as field
+        _entity.MoveStep(speed, 0f);
 
-        _entity.MoveStep(speedX, speedY);
+        if (_runTime >= _entity.Data.BounceFrequency)
+            return FlameStateID.BOUNCE;
 
-        // TODO add: bounce
-        
         return null;
     }
 }

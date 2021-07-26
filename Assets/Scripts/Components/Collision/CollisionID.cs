@@ -1,0 +1,14 @@
+public enum CollisionID 
+{
+    GROUND,
+    SPAWN_OR_EXIT,
+    CEILING,
+    ENTITY_LEFT,
+    ENTITY_RIGHT,
+    PLAYER_LEFT,
+    PLAYER_RIGHT,
+    PLAYER_DOWN,
+    ENTITY_ABOVE,
+    POW,
+    PLAYER_ABOVE
+}

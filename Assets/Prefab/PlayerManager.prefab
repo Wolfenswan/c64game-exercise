@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 1392327669424028345}
   - component: {fileID: -8239397563875966189}
   - component: {fileID: 5466469311488504343}
-  - component: {fileID: 8072545564533296657}
   m_Layer: 0
   m_Name: PlayerManager
   m_TagString: Untagged
@@ -45,8 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8748dc523210c64ab9e0706d8178fd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _data: {fileID: 11400000, guid: d72d4204a35696a428cbf43816e66da0, type: 2}
-  _playerPrefab: {fileID: 793443201681172, guid: a01f076e01a9a564d97d47292001e069, type: 3}
 --- !u!114 &5466469311488504343
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -102,32 +99,3 @@ MonoBehaviour:
     y: 0
     width: 1
     height: 1
---- !u!114 &8072545564533296657
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1392327669424028344}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1306e14b8c5b33d40ad1da45dec8a6aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  players:
-  - name: Left
-    routes:
-    - original: 15
-      remapped: 15
-    - original: 18
-      remapped: 18
-    - original: 1
-      remapped: 1
-  - name: Right
-    routes:
-    - original: 15
-      remapped: 88
-    - original: 18
-      remapped: 90
-    - original: 1
-      remapped: 2

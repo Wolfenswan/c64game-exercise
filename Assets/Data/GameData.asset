@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: GameData
   m_EditorClassIdentifier: 
   SpawnDelay: 1
-  GravityVector: {x: 0, y: -5}
+  GravityVector: {x: 0, y: -6}
   Levels:
   - {fileID: 11400000, guid: 9761c38733fa02a47aa190c46f0ca229, type: 2}

@@ -29,6 +29,7 @@ public class FlameController : NPCController
         var states = new List<State>
         {
             new FlameMoveState(FlameStateID.MOVE, this, AnimationHash.Move, doesHurt:true),
+            new FlameBounceState(FlameStateID.BOUNCE, this, AnimationHash.Move, doesHurt:true),
             new FlameSpawnState(FlameStateID.SPAWN, this, AnimationHash.Spawn, doesHurt:false),
             new FlameDespawnState(FlameStateID.DESPAWN, this, AnimationHash.Despawn, doesHurt:false),
         };

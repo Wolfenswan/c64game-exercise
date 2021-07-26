@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 793441580197291}
-  - component: {fileID: 793441580197288}
+  - component: {fileID: 9081427368906571895}
   m_Layer: 8
   m_Name: CollisionDetection
   m_TagString: Untagged
@@ -29,8 +29,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 793442516525849}
-  - {fileID: 793442672647988}
   - {fileID: 3519712030133288836}
+  - {fileID: 5153863167213331015}
   - {fileID: 8502849422252213046}
   - {fileID: 4505278148303809745}
   - {fileID: 2273716088553368543}
@@ -38,7 +38,7 @@ Transform:
   m_Father: {fileID: 793443201681173}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &793441580197288
+--- !u!114 &9081427368906571895
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -47,7 +47,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 793441580197290}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55a466c7593ff684b8b5c589023a6d8e, type: 3}
+  m_Script: {fileID: 11500000, guid: fd2629cf558e6c94d8159658291407ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _debugLog: 0
@@ -61,7 +61,7 @@ GameObject:
   m_Component:
   - component: {fileID: 793442516525849}
   - component: {fileID: 793442516525831}
-  - component: {fileID: 793442516525830}
+  - component: {fileID: 4021103493106140236}
   m_Layer: 8
   m_Name: Ceiling
   m_TagString: Untagged
@@ -105,7 +105,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &793442516525830
+--- !u!114 &4021103493106140236
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -114,99 +114,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 793442516525848}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 2
-  _requiredCollisionCount: 1
+  CollisionID: 2
+  _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 128
   _direction: 3
-  _bounds: {fileID: 793442516525831}
-  _distance: 0.05
+  _distance: 0.2
   _numberOfRays: 4
-  _filterSelf: 0
-  _showDebugRays: 0
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
---- !u!1 &793442672647991
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 793442672647988}
-  - component: {fileID: 793442672647986}
-  - component: {fileID: 793442672647989}
-  m_Layer: 8
-  m_Name: Enemy_Above
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &793442672647988
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 793442672647991}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 793441580197291}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!68 &793442672647986
-EdgeCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 793442672647991}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  m_EdgeRadius: 0
-  m_Points:
-  - {x: -0.3, y: 0.48}
-  - {x: 0.33, y: 0.48}
-  m_AdjacentStartPoint: {x: 0, y: 0}
-  m_AdjacentEndPoint: {x: 0, y: 0}
-  m_UseAdjacentStartPoint: 0
-  m_UseAdjacentEndPoint: 0
---- !u!114 &793442672647989
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 793442672647991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  CollisionType: 8
-  _requiredCollisionCount: 0
-  _collisionMask:
-    serializedVersion: 2
-    m_Bits: 1024
-  _direction: 3
-  _bounds: {fileID: 793442672647986}
-  _distance: 0.25
-  _numberOfRays: 4
-  _filterSelf: 0
+  _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0, g: 0.6879039, b: 1, a: 1}
+  _debugRayColor: {r: 1, g: 0.71898425, b: 0, a: 1}
 --- !u!1 &793442991862342
 GameObject:
   m_ObjectHideFlags: 0
@@ -217,7 +138,7 @@ GameObject:
   m_Component:
   - component: {fileID: 793442991862343}
   - component: {fileID: 793442991862341}
-  - component: {fileID: 793442991862340}
+  - component: {fileID: 7255921959855483448}
   m_Layer: 8
   m_Name: Ground
   m_TagString: Untagged
@@ -261,7 +182,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &793442991862340
+--- !u!114 &7255921959855483448
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -270,21 +191,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 793442991862342}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 0
+  CollisionID: 0
   _requiredCollisionCount: 2
   _collisionMask:
     serializedVersion: 2
     m_Bits: 128
   _direction: 2
-  _bounds: {fileID: 793442991862341}
-  _distance: 0.05
-  _numberOfRays: 12
-  _filterSelf: 0
+  _distance: 0.1
+  _numberOfRays: 8
+  _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &793443201681172
 GameObject:
   m_ObjectHideFlags: 0
@@ -552,7 +472,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8502849422252213046}
   - component: {fileID: 2248393101868949399}
-  - component: {fileID: 8044017355275815643}
+  - component: {fileID: 7313957982161215609}
   m_Layer: 8
   m_Name: Player_Right
   m_TagString: Untagged
@@ -596,7 +516,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &8044017355275815643
+--- !u!114 &7313957982161215609
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -605,21 +525,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 2822900036575130535}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 6
+  CollisionID: 6
   _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 64
   _direction: 0
-  _bounds: {fileID: 2248393101868949399}
   _distance: 0.15
-  _numberOfRays: 12
+  _numberOfRays: 8
   _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &5066009855118317376
 GameObject:
   m_ObjectHideFlags: 0
@@ -630,9 +549,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3519712030133288836}
   - component: {fileID: 4977456216737033083}
-  - component: {fileID: 5169096014596618588}
+  - component: {fileID: 4384274596918153488}
   m_Layer: 8
-  m_Name: Coin_Above
+  m_Name: Entity_Above
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -650,7 +569,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 793441580197291}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!68 &4977456216737033083
 EdgeCollider2D:
@@ -674,7 +593,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &5169096014596618588
+--- !u!114 &4384274596918153488
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -683,21 +602,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 5066009855118317376}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 9
+  CollisionID: 8
   _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
-    m_Bits: 2048
+    m_Bits: 3136
   _direction: 3
-  _bounds: {fileID: 4977456216737033083}
-  _distance: 0.25
+  _distance: 0.65
   _numberOfRays: 4
-  _filterSelf: 0
+  _filterSelf: 1
   _showDebugRays: 0
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 0.15303993, b: 1, a: 1}
 --- !u!1 &6141163963907394944
 GameObject:
   m_ObjectHideFlags: 0
@@ -867,6 +785,83 @@ MonoBehaviour:
   m_maskType: 0
   _SortingLayerID: 0
   _SortingOrder: 0
+--- !u!1 &6632647478107939617
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5153863167213331015}
+  - component: {fileID: 404577539498965017}
+  - component: {fileID: 154654436955790216}
+  m_Layer: 8
+  m_Name: POW
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5153863167213331015
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6632647478107939617}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 793441580197291}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!68 &404577539498965017
+EdgeCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6632647478107939617}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_EdgeRadius: 0
+  m_Points:
+  - {x: -0.3, y: 0.48}
+  - {x: 0.33, y: 0.48}
+  m_AdjacentStartPoint: {x: 0, y: 0}
+  m_AdjacentEndPoint: {x: 0, y: 0}
+  m_UseAdjacentStartPoint: 0
+  m_UseAdjacentEndPoint: 0
+--- !u!114 &154654436955790216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6632647478107939617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CollisionID: 9
+  _requiredCollisionCount: 0
+  _collisionMask:
+    serializedVersion: 2
+    m_Bits: 4096
+  _direction: 3
+  _distance: 0.15
+  _numberOfRays: 4
+  _filterSelf: 1
+  _showDebugRays: 1
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &6781158881433789890
 GameObject:
   m_ObjectHideFlags: 0
@@ -877,7 +872,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2273716088553368543}
   - component: {fileID: 6983183728194330608}
-  - component: {fileID: 4744205177596758031}
+  - component: {fileID: 8250164694326855370}
   m_Layer: 8
   m_Name: Player_Down
   m_TagString: Untagged
@@ -921,7 +916,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &4744205177596758031
+--- !u!114 &8250164694326855370
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -930,21 +925,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 6781158881433789890}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 7
+  CollisionID: 7
   _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 64
   _direction: 2
-  _bounds: {fileID: 6983183728194330608}
-  _distance: 0.05
-  _numberOfRays: 12
+  _distance: 0.15
+  _numberOfRays: 4
   _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &6938237348962934151
 GameObject:
   m_ObjectHideFlags: 0
@@ -955,7 +949,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4505278148303809745}
   - component: {fileID: 3967667972023515964}
-  - component: {fileID: 3064686274487225992}
+  - component: {fileID: 963150019952176559}
   m_Layer: 8
   m_Name: Player_Left
   m_TagString: Untagged
@@ -999,7 +993,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &3064686274487225992
+--- !u!114 &963150019952176559
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1008,18 +1002,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 6938237348962934151}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 5
+  CollisionID: 5
   _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 64
   _direction: 1
-  _bounds: {fileID: 3967667972023515964}
   _distance: 0.15
-  _numberOfRays: 12
+  _numberOfRays: 8
   _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}

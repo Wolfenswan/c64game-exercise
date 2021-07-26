@@ -7,19 +7,18 @@ public class CoinCollectState : CoinState
 
     public CoinCollectState(CoinStateID id, CoinController entity, int animationHash) : base(id, entity, animationHash){}
 
-    float yForce;
+    float _yForce;
 
     public override void OnEnter(Enum fromState)
     {
         base.OnEnter(fromState);
 
-        yForce = 2; // TODO data and tweak as required
+        _yForce = _entity.Data.CollectUpwardsStrength; // TODO move to constructor once finalized
     }
     public override Enum Tick()
     {   
-        var newY = yForce * Time.deltaTime;
-        _entity.MoveStep(0f, newY);
-        yForce += _gravityVector.y * Time.deltaTime;
+        _entity.MoveStep(0f, _yForce * Time.deltaTime);
+        _yForce += _gravityVector.y * Time.deltaTime;
 
         return null;
     }

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 373155855428869898}
   m_Layer: 0
-  m_Name: Bounds
+  m_Name: LevelBounds
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29,8 +29,6 @@ Transform:
   m_Children:
   - {fileID: 373155855930042350}
   - {fileID: 373155856219008989}
-  - {fileID: 3496634909565593192}
-  - {fileID: 2358493492994163789}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -61,7 +59,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 373155855930042345}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.57, y: 3.52, z: 0}
+  m_LocalPosition: {x: -16, y: 8, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 373155855428869898}
@@ -91,7 +89,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.05, y: 8.066573}
+  m_Size: {x: 0.05, y: 16}
   m_EdgeRadius: 0
 --- !u!114 &373155855930042351
 MonoBehaviour:
@@ -105,7 +103,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96290b7d509143947979adf81a7a89a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _exit: {fileID: 2358493492994163789}
+  _exitPos: 35
   _tagsToTeleport:
   - Player
   - Enemy
@@ -158,7 +156,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 373155856219008988}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.56, y: 3.61, z: 0}
+  m_LocalPosition: {x: 16, y: 8, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 373155855428869898}
@@ -188,7 +186,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.05, y: 8.073951}
+  m_Size: {x: 0.05, y: 16}
   m_EdgeRadius: 0
 --- !u!114 &373155856219008978
 MonoBehaviour:
@@ -202,7 +200,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96290b7d509143947979adf81a7a89a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _exit: {fileID: 3496634909565593192}
+  _exitPos: -35
   _tagsToTeleport:
   - Player
   - Enemy
@@ -228,63 +226,3 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 7
---- !u!1 &2964447595080978031
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2358493492994163789}
-  m_Layer: 0
-  m_Name: ExitOffset_right
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2358493492994163789
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2964447595080978031}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.4949999, y: 3.5668445, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 373155855428869898}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8346941718400927650
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3496634909565593192}
-  m_Layer: 0
-  m_Name: ExitOffset_Left
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3496634909565593192
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8346941718400927650}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.4949999, y: 3.5668445, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 373155855428869898}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

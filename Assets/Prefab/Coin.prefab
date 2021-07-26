@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1199030826696261990}
   - component: {fileID: 6924183420740368703}
-  - component: {fileID: 3336155381391417722}
+  - component: {fileID: 7277071003120927560}
   m_Layer: 8
   m_Name: Ground
   m_TagString: Untagged
@@ -54,7 +54,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &3336155381391417722
+--- !u!114 &7277071003120927560
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -63,21 +63,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 1191893656760532713}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 0
-  _requiredCollisionCount: 2
+  CollisionID: 0
+  _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 128
   _direction: 2
-  _bounds: {fileID: 6924183420740368703}
-  _distance: 0.05
-  _numberOfRays: 12
-  _filterSelf: 0
+  _distance: 0.15
+  _numberOfRays: 4
+  _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &2423865750286514092
 GameObject:
   m_ObjectHideFlags: 0
@@ -88,7 +87,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6375775757353399740}
   - component: {fileID: 6586601986991439370}
-  - component: {fileID: 2128745606424473985}
+  - component: {fileID: 1242742333863958708}
   m_Layer: 8
   m_Name: Spawn
   m_TagString: Untagged
@@ -132,7 +131,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &2128745606424473985
+--- !u!114 &1242742333863958708
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -141,21 +140,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 2423865750286514092}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 1
+  CollisionID: 1
   _requiredCollisionCount: 2
   _collisionMask:
     serializedVersion: 2
     m_Bits: 512
   _direction: 2
-  _bounds: {fileID: 6586601986991439370}
-  _distance: 0.05
-  _numberOfRays: 12
-  _filterSelf: 0
-  _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _distance: 0.15
+  _numberOfRays: 4
+  _filterSelf: 1
+  _showDebugRays: 0
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &2860521890056760335
 GameObject:
   m_ObjectHideFlags: 0
@@ -335,7 +333,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6862873720969182498}
   - component: {fileID: 3236187973471012808}
-  - component: {fileID: 7509647093782860343}
+  - component: {fileID: 1572539072229340957}
   m_Layer: 8
   m_Name: Entity_Left
   m_TagString: Untagged
@@ -379,7 +377,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &7509647093782860343
+--- !u!114 &1572539072229340957
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -388,21 +386,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 2916089854263146645}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 3
+  CollisionID: 3
   _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 3136
   _direction: 1
-  _bounds: {fileID: 3236187973471012808}
-  _distance: 0.1
-  _numberOfRays: 8
+  _distance: 0.15
+  _numberOfRays: 4
   _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &7867047185679965425
 GameObject:
   m_ObjectHideFlags: 0
@@ -412,7 +409,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5879630943432083882}
-  - component: {fileID: 463110592762826697}
+  - component: {fileID: 3310611345815687259}
   m_Layer: 8
   m_Name: CollisionDetection
   m_TagString: Untagged
@@ -438,7 +435,7 @@ Transform:
   m_Father: {fileID: 6436257754732115310}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &463110592762826697
+--- !u!114 &3310611345815687259
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -447,7 +444,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7867047185679965425}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55a466c7593ff684b8b5c589023a6d8e, type: 3}
+  m_Script: {fileID: 11500000, guid: fd2629cf558e6c94d8159658291407ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _debugLog: 0
@@ -461,7 +458,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5525397079174028805}
   - component: {fileID: 8410114071754632299}
-  - component: {fileID: 4205164737117182068}
+  - component: {fileID: 8550411193594440782}
   m_Layer: 8
   m_Name: Entity_Right
   m_TagString: Untagged
@@ -505,7 +502,7 @@ EdgeCollider2D:
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!114 &4205164737117182068
+--- !u!114 &8550411193594440782
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -514,21 +511,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 8177656758354476962}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21522356e90e1744c934ed40800cbe4a, type: 3}
+  m_Script: {fileID: 11500000, guid: 229d89d65e6691145a33c7e747958952, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionType: 4
+  CollisionID: 4
   _requiredCollisionCount: 0
   _collisionMask:
     serializedVersion: 2
     m_Bits: 3136
   _direction: 0
-  _bounds: {fileID: 8410114071754632299}
-  _distance: 0.1
-  _numberOfRays: 8
+  _distance: 0.15
+  _numberOfRays: 4
   _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0.9172354, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &8196090195683448682
 GameObject:
   m_ObjectHideFlags: 0

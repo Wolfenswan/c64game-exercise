@@ -12,7 +12,7 @@ public class CoinMoveState : CoinState
         var speedX = _entity.Data.MoveSpeed * Time.deltaTime * direction; // TODO once the value is final, move to constructor or declare as field
         var speedY = 0f;
 
-        if (!_entity.IsTouchingGround && !_entity.IsTouchingSpawn)
+        if (!_entity.IsTouchingGround && !_entity.IsTouchingSpawnOrExit)
             speedY = _gravityVector.y * Time.deltaTime;
 
         _entity.MoveStep(speedX, speedY);

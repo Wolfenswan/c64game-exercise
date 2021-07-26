@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using NEINGames;
+using NEINGames.Debugging;
+
+//! UNUSED
 
 // InputStateContainer serves as a custom container to pass input states around
 // A dictionary would serve the same purpose, the custom container mostly does improve readability, as there's no need to juggle dict-keys

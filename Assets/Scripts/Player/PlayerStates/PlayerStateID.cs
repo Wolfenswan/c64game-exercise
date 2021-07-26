@@ -4,6 +4,7 @@ public enum PlayerStateID
     SPAWN,
     MOVE,
     JUMP,
+    HOP,
     SLIDE,
     DIE
 }

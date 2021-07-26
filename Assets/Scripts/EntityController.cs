@@ -24,7 +24,7 @@ public abstract class EntityController : MonoBehaviour
 
     public Vector2 Pos{get=>transform.position;}
     public EntityFacing Facing{get; private set;} = EntityFacing.RIGHT;    
-    protected Dictionary<CollisionType,bool> _collisions = new Dictionary<CollisionType,bool>();
+    protected Dictionary<CollisionID,bool> _collisions = new Dictionary<CollisionID,bool>();
     
     #region public field accessors
     public bool IsFacingRight{get => Facing == EntityFacing.RIGHT;}
@@ -45,12 +45,23 @@ public abstract class EntityController : MonoBehaviour
 
     protected virtual void Update() 
     {
+        if (GameManager.Instance == null || !_collisionController.Initialized)
+            return;
+        
+        _collisions = _collisionController.UpdateCollisions();
+
+        _stateMachine.Tick(TickMode.UPDATE);    
+
         if(Debugging)
             _debugText.text = $"{this}\n{CurrentStateName}";
+
     }
 
     #region movement and facing   
-    public void MoveStep(float x, float y) => transform.position += new Vector3(x, y, 0f);
+    public void MoveStep(float x, float y) => MoveStep(new Vector2(x, y));
+    public void MoveStep(float x, float y, bool applyDeltaTime) => MoveStep(new Vector2(x, y) * Time.deltaTime);
+    public void MoveStep(Vector2 moveVector) => transform.position += (Vector3) moveVector;
+    public void MoveStep(Vector2 moveVector, bool applyDeltaTime) => transform.position += (Vector3) moveVector * Time.deltaTime;
 
     public void UpdateFacing(int newFacing) =>  UpdateFacing((EntityFacing) newFacing);
 
@@ -63,5 +74,11 @@ public abstract class EntityController : MonoBehaviour
         }
     }
     public void ReverseFacing() => UpdateFacing(IsFacingRight?EntityFacing.LEFT:EntityFacing.RIGHT);
+
+    public void SetFacingTowards<T> (T otherEntity) where T:EntityController
+    {
+        var newFacing = otherEntity.Pos.x > Pos.x?EntityFacing.RIGHT:EntityFacing.LEFT;
+        UpdateFacing(newFacing);
+    }
     #endregion
 }

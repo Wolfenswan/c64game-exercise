@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: PlayerData
   m_EditorClassIdentifier: 
   MoveSpeed: 3
-  TimeToSlide: 0.25
-  SlideDuration: 0.5
-  JumpSpeed: 2
-  JumpVector: {x: 2, y: 6}
-  DefaultLives: 5
+  TimeToSlide: 0.35
+  SlideDuration: 0.4
+  JumpForceVector: {x: 3, y: 6}
+  HopModifier: 0.75
+  FallSpeedMultiplier: 2
+  StartingLives: 5
   BonusLiveTreshold: 20000
-  RespawnTime: 2
-  CoinCollectPoints: 800
-  PlayerColors:
-  - serializedVersion: 2
-    rgba: 4283364794
-  - serializedVersion: 2
-    rgba: 4294967202
+  CollectionMultiplierResetAfter: 1
+  RespawnDelay: 2
+  RespawnGracePeriod: 3
+  AvailableColors:
+  - {r: 0.9056604, g: 0, b: 0, a: 1}
+  - {r: 0.38857925, g: 0.9622642, b: 0, a: 1}

@@ -8,8 +8,8 @@ public class GFXController : MonoBehaviour {
     public event Action<int> AnimationStartedEvent;
     public event Action<int> AnimationFinishedEvent;
 
-    Animator _animator;
-    SpriteRenderer _spriteRenderer;
+    Animator _animator = null;
+    SpriteRenderer _spriteRenderer = null;
     int _currentAnimationHash;
 
     public Color Color {get=>_spriteRenderer.color;}
@@ -27,7 +27,7 @@ public class GFXController : MonoBehaviour {
     public void ChangeAnimation (int newAnimationHash) 
     {
         if (_currentAnimationHash == newAnimationHash) return;
-        //_animator.Play(newAnimationHash); //! TODO RE-ENABLE after adding placeholder animations
+        _animator?.Play(newAnimationHash);
         _currentAnimationHash = newAnimationHash;
     }
 

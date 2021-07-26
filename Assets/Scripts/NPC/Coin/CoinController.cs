@@ -42,14 +42,6 @@ public class CoinController : NPCController
         _gfxController.AnimationFinishedEvent -= GFX_AnimationFinishedEvent;
     }
 
-    protected override void Update()
-    {
-        base.Update();
-
-        _collisions = _collisionController.UpdateCollisions();
-        _stateMachine.Tick(TickMode.UPDATE);
-    }
-
     public void OnCollect()
     {
         _stateMachine.ForceState(CoinStateID.COLLECT);

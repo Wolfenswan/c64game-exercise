@@ -6,17 +6,17 @@ using System.Collections.Generic;
 using UnityEngine.InputSystem;
 
 public class PlayerManager : Singleton<PlayerManager> // TODO probably does not need to be a singleton
-{
+{   
+    public event Action<PlayerController> NewPlayerJoinedEvent;
     public event Action AllPlayersKilledEvent;
-
-    [SerializeField] PlayerData _data;
-    [SerializeField] GameObject _playerPrefab;
+    public event Action PlayersTriggerPowEvent;
 
     List<Transform> _playerSpawnPositions;
     List<Transform> _playerRespawnPositions;
 
     bool _canJoin = true;
-    Dictionary<int, PlayerController> _activePlayers = new Dictionary<int, PlayerController>();
+    // Dictionary<int, PlayerController> _activePlayers = new Dictionary<int, PlayerController>();
+    List<PlayerController> _activePlayers = new List<PlayerController>();
 
     void Awake() 
     {
@@ -33,47 +33,55 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     {
         GameManager.Instance.LevelChangeEvent += GameManager_LevelChangeEvent; // Subscribing in OnEnable can cause a NullReferenceException
         GameManager.Instance.LevelStartedEvent += GameManager_LevelStartedEvent;
+
+        PlayerController.PowTriggeredEvent += PlayerController_PowTriggeredEvent;
+
+        NPCManager.GivePointsEvent += NPCManager_GivePointsEvent;
     }
     
     void OnDisable() 
     {   
         GameManager.Instance.LevelChangeEvent -= GameManager_LevelChangeEvent;
         GameManager.Instance.LevelStartedEvent -= GameManager_LevelStartedEvent;
+
+        PlayerController.PowTriggeredEvent -= PlayerController_PowTriggeredEvent;
+
+        NPCManager.GivePointsEvent -= NPCManager_GivePointsEvent;
     }
 
     // After joining players stay persistent for the entire session
     public void OnPlayerJoinedEvent(PlayerInput pI)
     {   
-        //! If there's no continue system -> prevent players from rejoining; _gameInProgress bool?
+        //! TODO If there's no continue system -> prevent players from rejoining; _gameInProgress bool?
         if (!_canJoin)
             return;
 
         var id = pI.playerIndex;
-        pI.gameObject.name = $"Player #{id}";
+        pI.gameObject.name = $"Player #{id+1}";
         pI.transform.parent = transform;
 
         var pc = pI.GetComponent<PlayerController>();
         pc.InitializePlayer(id);
-        _activePlayers.Add(id, pc);
-        pc.PlaceAtSpawn(_playerSpawnPositions[id]);
+        _activePlayers.Add(pc);
+        pc.SpawnAt(_playerSpawnPositions[id]);
 
         SubscribeToPlayerEvents(pc);
+
+        NewPlayerJoinedEvent?.Invoke(pc);
     }
 
     // Called when changing to a new scene/level
     void ResetPlayerPositions()
     {
-        foreach (var item in _activePlayers.Values)
-        {
-            item.PlaceAtSpawn(_playerSpawnPositions[item.ID]);
-        }
+        _activePlayers.ForEach(player => player.SpawnAt(_playerSpawnPositions[player.ID]));
     }
 
     void SubscribeToPlayerEvents(PlayerController pc)
-    {
+    {  
         pc.PlayerRespawnEvent += Player_PlayerRespawnEvent;
         pc.PlayerDeadEvent += Player_PlayerDeadEvent;
         pc.MoveOtherPlayerEvent += Player_MoveOtherPlayerEvent;
+        pc.HopOtherPlayerEvent += Player_HopOtherPlayerEvent;
         pc.PlayerDisabledEvent += Player_PlayerDisabledEvent;
     }
 
@@ -82,11 +90,13 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
         pc.PlayerRespawnEvent -= Player_PlayerRespawnEvent;
         pc.PlayerDeadEvent -= Player_PlayerDeadEvent;
         pc.MoveOtherPlayerEvent -= Player_MoveOtherPlayerEvent;
+        pc.HopOtherPlayerEvent -= Player_HopOtherPlayerEvent;
         pc.PlayerDisabledEvent -= Player_PlayerDisabledEvent;
     }
 
     void GameManager_LevelChangeEvent(LevelData data)
     {
+        _activePlayers.ForEach(player => player.StopAllCoroutines());
         // TODO maybe requires CoRoutine OnLevelChange
         // Disable Players for the time being
         // Make sure players cant join
@@ -99,14 +109,29 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
         // Enable player controls; however might be unnecessary if TimeScale works as intended?
     }
 
-    void Player_MoveOtherPlayerEvent(Vector2 moveVector, PlayerController otherPlayer) => otherPlayer.MoveStep(moveVector.x, moveVector.y);
+    // Theoretically NPCManager could evoke AddPoints directly but using an event avoids tight coupling between NPCManager & Player-related classes
+    void NPCManager_GivePointsEvent(int points, PlayerController receivingPlayer, PointTypeID type) => receivingPlayer.AddPoints(points, type);
 
-    void Player_PlayerRespawnEvent(PlayerController player) => player.PlaceAtSpawn(_playerRespawnPositions[player.PlayerValues.ID]);
+    void PlayerController_PowTriggeredEvent(PlayerController byPlayer)
+    {
+        var affectedPlayers = _activePlayers.FindAll(player => player != byPlayer && player.CanHop);
+        foreach (var player in affectedPlayers)
+        {   
+            player.ForceToHop();
+        }
+        PlayersTriggerPowEvent?.Invoke();
+    }
+
+    void Player_MoveOtherPlayerEvent(Vector2 moveVector, PlayerController otherPlayer) => otherPlayer.MoveStep(moveVector.x, moveVector.y, applyDeltaTime:true);
+
+    void Player_HopOtherPlayerEvent(PlayerController otherPlayer, Vector2 contactPoint) => otherPlayer.ForceToHop();
+
+    void Player_PlayerRespawnEvent(PlayerController player) => player.SpawnAt(_playerRespawnPositions[player.PlayerValues.ID]);
     
     void Player_PlayerDeadEvent(PlayerController player)
     {
         //player.gameObject.SetActive(false);
-        _activePlayers.Remove(player.PlayerValues.ID);
+        _activePlayers.Remove(player);
         Destroy(player.gameObject);
         
         //! IDEA show "continue?" prompt on UI

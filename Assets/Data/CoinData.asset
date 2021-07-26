@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: CoinData
   m_EditorClassIdentifier: 
   MoveSpeed: 1
+  CollectUpwardsStrength: 3
   Points: 800

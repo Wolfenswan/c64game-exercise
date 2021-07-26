@@ -16,11 +16,11 @@ public class PlayerSlideState : PlayerState
     public override Enum Tick()
     {
         var maxDuration = _player.Data.SlideDuration; // TODO once the value is final, move to constructor or declare as field
-        var moveSpeed = _player.Data.MoveSpeed; // TODO once the value is final, move to constructor or declare as field
+        var moveSpeed = _player.Data.MoveSpeed * (int) _player.Facing * Time.deltaTime; // TODO once the value is final, move to constructor or declare as field
 
-        if (!_player.IsTouchingGround) // TODO use gravity vector / dedicated state?
+        if (!_player.IsTouchingGround)
         {   
-            _player.MoveStep(moveSpeed * Time.deltaTime * (int) _player.Facing, _gravityVector.y * Time.deltaTime);
+            _player.MoveStep(moveSpeed, _gravityVector.y * Time.deltaTime);
         } else
         {
             _moveTimer += Time.deltaTime; // Not using _runTime, as fall should be excluded
@@ -31,7 +31,7 @@ public class PlayerSlideState : PlayerState
             if (_moveTimer >= maxDuration)
                 return PlayerStateID.IDLE;
                 
-            _player.MoveStep((moveSpeed * Time.deltaTime) * (int) _player.Facing, 0f);
+            _player.MoveStep(moveSpeed, 0f);
         }
 
         return null;
