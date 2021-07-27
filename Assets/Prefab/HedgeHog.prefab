@@ -56,7 +56,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  - {fileID: 2180264, guid: f5b76f97ad7799149887902fc089585d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -98,10 +98,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: Debug
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: f5b76f97ad7799149887902fc089585d, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: f5b76f97ad7799149887902fc089585d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -167,6 +167,7 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 5298276424792425956}
   m_maskType: 0
+  _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
 --- !u!1 &3523972675821317083
@@ -615,11 +616,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 3136
   _direction: 0
-  _distance: 0.15
+  _distance: 0.18
   _numberOfRays: 4
   _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 1, g: 0.66526496, b: 0, a: 1}
 --- !u!1 &8782552351028131653
 GameObject:
   m_ObjectHideFlags: 0
@@ -692,8 +693,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 3136
   _direction: 1
-  _distance: 0.15
+  _distance: 0.18
   _numberOfRays: 4
   _filterSelf: 1
   _showDebugRays: 1
-  _debugRayColor: {r: 0, g: 1, b: 0, a: 1}
+  _debugRayColor: {r: 1, g: 0.66526496, b: 0, a: 1}

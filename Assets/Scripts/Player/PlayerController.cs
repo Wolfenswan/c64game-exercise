@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using NEINGames.Utilities;
-
-//! TODO StopAllCoroutines(); - maybe subscribe to GameManager; or use PlayerManager?
 
 public class PlayerController : EntityController
 {   
@@ -14,7 +11,7 @@ public class PlayerController : EntityController
     public static event Action<EnemyController, PlayerController> TryNPCFlipEvent; // Let subscribers know this enemy has been flipped
     public static event Action<EnemyController, PlayerController> EnemyKillEvent; // Let subscribers know this enemy has been killed
     public static event Action<CoinController, PlayerController> TryCoinCollectEvent; // Let subscribers know this coin has been collected
-    public static event Action<PlayerController> PowTriggeredEvent; // Let subsribers that POW has been triggered and by whom
+    public static event Action<PlayerController> PowTriggeredEvent; // Let subscribers know that POW has been triggered and by whom
 
     // Non-static events subscribed to by objects aware of the individual player objects (PlayerStates and PlayerManager)
     public event Action JumpEvent;
@@ -32,7 +29,8 @@ public class PlayerController : EntityController
 
 
     #region public field accessors
-    public int ID {get => PlayerValues.ID;}
+    public PlayerID ID {get => PlayerValues.ID;}
+    public int IDInt {get => PlayerValues.IDInt;}
     public PlayerData Data{get => _data;}
     public PlayerStateID CurrentPlayerStateID{get => (PlayerStateID) CurrentStateID;}
     public PlayerValues PlayerValues{get; private set;}
@@ -59,7 +57,8 @@ public class PlayerController : EntityController
     #endregion
 
     #region helpers & cooldowns
-    int _collectionMultiplier = 1; // TODO add functionality. max is 5.
+    int _pointMultiplier;
+    float _lastPointAdditionTimestamp = 0; // stores the last time "multipliable" points were scored and is then compared to the current time on the next point collection
     bool _controlsEnabled = true;
     bool _powOnCooldown = false;
     #endregion
@@ -82,12 +81,12 @@ public class PlayerController : EntityController
         _playerInput = GetComponent<PlayerInput>();
         _mainCollider = GetComponent<BoxCollider2D>();
 
-        _gfxController.SetSpriteColor(_data.AvailableColors[ID]);
+        _gfxController.SetSpriteColor(_data.AvailableColors[IDInt]);
 
         StartCoroutine(WaitForCollisionController()); // Disables controls until the collisionController is fully functional
     }
 
-    public void InitializePlayer(int id, PlayerValues playerValues = null)
+    public void InitializePlayer(PlayerID id, PlayerValues playerValues = null)
     {
         PlayerValues = (playerValues==null)?new PlayerValues(id, _data.StartingLives, 0, _data.BonusLiveTreshold):playerValues;
     }
@@ -198,10 +197,8 @@ public class PlayerController : EntityController
                 {
                     if (Debugging) Debug.Log($"{this} tries to bounce {otherPlayer}"); 
 
-                    if (otherPlayer.CanHop)
-                    {   
-                        HopOtherPlayerEvent?.Invoke(otherPlayer, Pos);
-                    } 
+                    // Hitting another player from below can cause that player to execute a smaller jump (hop)
+                    if (otherPlayer.CanHop) HopOtherPlayerEvent?.Invoke(otherPlayer, Pos);
                 }               
             }
         }
@@ -276,22 +273,30 @@ public class PlayerController : EntityController
 
     public void AddPoints(int points, PointTypeID type)
     {   
-        if (_data.PointTypesMultiplied[type]) 
+        if (_data.PointTypesMultiplied[type])
         {
-            points*=_collectionMultiplier;
-            StopCoroutine(CollectionMultiplierResetTimer()); // The cooldown could already be running from a prior point collection.
-            StartCoroutine(CollectionMultiplierResetTimer());
+            if (Time.time - _lastPointAdditionTimestamp < _data.PointMultiplierResetAfter)
+                _pointMultiplier = Mathf.Min(_pointMultiplier + 1, _data.MaxPointMultiplier);
+            else
+                _pointMultiplier = 1;
+
+            points*=_pointMultiplier;
+
+            _lastPointAdditionTimestamp = Time.time;
         }
         PlayerValues.UpdateScore(points);
     }
     #endregion
 
     #region co-routines
-    IEnumerator CollectionMultiplierResetTimer()
-    {   
-        yield return new WaitForSeconds(_data.CollectionMultiplierResetAfter);
-        _collectionMultiplier = 1;
-    }
+    // IEnumerator CollectionMultiplierIncrease() //* OBSOLETE
+    // {   
+    //     if (Debugging) Debug.Log($"{this} | Collection multiplier CR started. Currently at x{_collectionMultiplier}");
+    //     _collectionMultiplier = Mathf.Clamp(_collectionMultiplier + 1, 1, 5);
+    //     yield return new WaitForSeconds(_data.CollectionMultiplierResetAfter);
+    //     if (Debugging) Debug.Log($"{this} | Collection multiplier CR ended");
+    //     _collectionMultiplier = 1;
+    // }
 
     // In adherence to the original arcade game, pow cooldown is individual for each PlayerController so one player can only trigger POW once during their jump but multiple players could - in theory - trigger POW at the same time.
     IEnumerator PowCooldown()

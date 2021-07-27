@@ -5,8 +5,6 @@ public class FlameMoveState : FlameState
 {
 
     public FlameMoveState(FlameStateID id, FlameController entity, int animationHash, bool doesHurt = true) : base(id, entity, animationHash, doesHurt){}
-    
-    float _tick;
     bool _bouncing;
 
     // TODO maybe just use a bezierCurve?
@@ -15,7 +13,6 @@ public class FlameMoveState : FlameState
     {
         base.OnEnter(fromState);
 
-        _tick = 0f;
         _bouncing = false;
     }
 

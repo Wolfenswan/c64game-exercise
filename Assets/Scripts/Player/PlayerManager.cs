@@ -56,14 +56,15 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
         if (!_canJoin)
             return;
 
-        var id = pI.playerIndex;
-        pI.gameObject.name = $"Player #{id+1}";
+        var idInt = pI.playerIndex;
+        var idEnum = (PlayerID) idInt + 1;
+        pI.gameObject.name = $"Player #{idInt+1}";
         pI.transform.parent = transform;
 
         var pc = pI.GetComponent<PlayerController>();
-        pc.InitializePlayer(id);
+        pc.InitializePlayer(idEnum);
         _activePlayers.Add(pc);
-        pc.SpawnAt(_playerSpawnPositions[id]);
+        pc.SpawnAt(_playerSpawnPositions[idInt]);
 
         SubscribeToPlayerEvents(pc);
 
@@ -73,7 +74,7 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     // Called when changing to a new scene/level
     void ResetPlayerPositions()
     {
-        _activePlayers.ForEach(player => player.SpawnAt(_playerSpawnPositions[player.ID]));
+        _activePlayers.ForEach(player => player.SpawnAt(_playerSpawnPositions[player.IDInt]));
     }
 
     void SubscribeToPlayerEvents(PlayerController pc)
@@ -126,7 +127,7 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
 
     void Player_HopOtherPlayerEvent(PlayerController otherPlayer, Vector2 contactPoint) => otherPlayer.ForceToHop();
 
-    void Player_PlayerRespawnEvent(PlayerController player) => player.SpawnAt(_playerRespawnPositions[player.PlayerValues.ID]);
+    void Player_PlayerRespawnEvent(PlayerController player) => player.SpawnAt(_playerRespawnPositions[player.IDInt]);
     
     void Player_PlayerDeadEvent(PlayerController player)
     {

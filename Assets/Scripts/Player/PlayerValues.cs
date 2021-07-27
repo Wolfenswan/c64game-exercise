@@ -4,10 +4,10 @@ using System;
 // PlayerValues can also easily be stored across scenes by using a Singleton-Manager
 public class PlayerValues
 {   
-    public static event Action<int, int> ScoreUpdatedEvent; // Sends ID + current score
-    public static event Action<int, int> LivesUpdatedEvent; // Sends ID + current lives
+    public static event Action<PlayerID, int> ScoreUpdatedEvent; // Sends ID + current score
+    public static event Action<PlayerID, int> LivesUpdatedEvent; // Sends ID + current lives
 
-    public PlayerValues(int id, int lives, int score, int bonusLiveTreshold)
+    public PlayerValues(PlayerID id, int lives, int score, int bonusLiveTreshold)
     {
         ID = id;
         Lives = lives;
@@ -19,7 +19,8 @@ public class PlayerValues
         ScoreUpdatedEvent?.Invoke(id, Score);
     }
 
-    public int ID{get;private set;}
+    public PlayerID ID{get;private set;}
+    public int IDInt{get => (int) ID - 1;} // IDInt is exclusively used to select list-elements according to their index, thus why it's reduced by 1 to avoid index missing errors
     public int Lives{get; private set;}
     public int Score{get; private set;}
     public int NextBonusLiveAt{get; private set;}

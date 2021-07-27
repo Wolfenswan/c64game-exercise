@@ -80,12 +80,14 @@ public class GameManager : Singleton<GameManager>
 
     void PlayerManager_PowTriggeredEvent()
     {
-        PowLeft = Mathf.Clamp(PowLeft-1, 0, 2);
-        
+        PowLeft -= 1;
         if(PowLeft >= 0)
         {
             // TODO Camera Shake
             UpdatePowState?.Invoke(PowLeft);
+        } else if(PowLeft < 0) // Sanity check. Should not be possible to reduce POW below 0 as POWController disables itself before that.
+        {
+            Debug.LogWarning("GameManager: PowLeft has been reduced below 0.");
         }
     }
 
