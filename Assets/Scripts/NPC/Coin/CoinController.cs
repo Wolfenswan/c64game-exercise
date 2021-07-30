@@ -37,8 +37,9 @@ public class CoinController : NPCController
         _gfxController.AnimationFinishedEvent += GFX_AnimationFinishedEvent;
     }
 
-    void OnDisable() 
+    protected override void OnDisable() 
     {
+        base.OnDisable();
         _gfxController.AnimationFinishedEvent -= GFX_AnimationFinishedEvent;
     }
 

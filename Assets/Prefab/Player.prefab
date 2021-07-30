@@ -364,8 +364,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7db64c569df76f34e8fe163514bd4c97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Debugging: 1
   _collisionDetection: {fileID: 793441580197290}
+  IsDebugging: 1
+  _dbgMaxLogLevel: 99
+  _debugTextField: {fileID: 7299291721525316436}
   _data: {fileID: 11400000, guid: d72d4204a35696a428cbf43816e66da0, type: 2}
 --- !u!114 &8179064811741136609
 MonoBehaviour:

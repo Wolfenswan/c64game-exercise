@@ -41,8 +41,9 @@ public class EnemyController : NPCController
         static int AtH(string s) => Animator.StringToHash(s);
     }
 
-    void Start() 
+    protected override void Start() 
     {
+        base.Start();
         SetAngerLevel(1);
     }
 
@@ -51,8 +52,9 @@ public class EnemyController : NPCController
         _gfxController.AnimationFinishedEvent += GFX_AnimationFinishedEvent;
     }
 
-    void OnDisable() 
+    protected override void OnDisable() 
     {
+        base.OnDisable();
         _gfxController.AnimationFinishedEvent -= GFX_AnimationFinishedEvent;
     }
 

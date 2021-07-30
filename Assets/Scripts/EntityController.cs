@@ -1,18 +1,18 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
 using TMPro;
 
 [RequireComponent(typeof (GFXController))]
-public abstract class EntityController : MonoBehaviour 
+public abstract class EntityController : MonoBehaviour, IDebugMonitor
 {   
-    public bool Debugging = true;
+    [Header("EntityController")]
     [SerializeField] GameObject _collisionDetection;
 
     #region components
     protected GFXController _gfxController;
     protected CollisionController _collisionController;
-    protected TextMeshPro _debugText;
     #endregion
 
     #region state handling
@@ -30,14 +30,42 @@ public abstract class EntityController : MonoBehaviour
     public bool IsFacingRight{get => Facing == EntityFacing.RIGHT;}
     #endregion
 
+    #region debugging   
+    [Header("Debugging")]
+    [SerializeField] DebugLogLevel _dbgMaxLogLevel = DebugLogLevel.ALL;
+    [SerializeField] TextMeshPro _debugTextField;
+    
+    public event EventHandler<DebugEventArgs> DebugEvent;
+    public event Action<object, string> DebugLogEvent;
+    public event Action<object, string> DebugWarningEvent;
+    public event Action<object, string> DebugErrorEvent;
+    public event Action<object, string> DebugTextUpdateEvent;
+
+    public void DebugRaiseEvent(string debugText, DebugLogType logType = DebugLogType.CONSOLE, DebugLogLevel logLevel = DebugLogLevel.NORMAL, bool overrideLogLevelRestrictions = false)
+    {
+        var args = new DebugEventArgs(debugText, logType, logLevel);
+        DebugEvent?.Invoke(this, args);
+    }
+    #endregion
+
+
     #region initialization
     protected virtual void Awake() 
     {
         _gfxController = GetComponent<GFXController>();
         _collisionController = _collisionDetection.GetComponent<CollisionController>();
-        _debugText = transform.Find("DebugText").GetComponent<TextMeshPro>();
 
         InitializeStateMachine();
+    }
+
+    protected virtual void Start()
+    {
+        DebugManager.Instance.RegisterObject<EntityController>(this, $"{this}", _dbgMaxLogLevel, _debugTextField);
+    }
+
+    protected virtual void OnDisable() 
+    {
+        DebugManager.Instance.DeregisterObject(this);
     }
 
     protected abstract void InitializeStateMachine();
@@ -52,9 +80,8 @@ public abstract class EntityController : MonoBehaviour
 
         _stateMachine.Tick(TickMode.UPDATE);    
 
-        if(Debugging)
-            _debugText.text = $"{this}\n{CurrentStateName}";
-
+        //DebugRaiseEvent($"{CurrentStateName}.", DebugLogType.TEXT);
+        DebugTextUpdateEvent(this, $"{CurrentStateName}");
     }
 
     #region movement and facing   

@@ -4,8 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-//! TODO StopAllCoroutines(); as necessary
-
 public class NPCManager : MonoBehaviour
 {   
     public static event Action<int, PlayerController, PointTypeID> GivePointsEvent; // Parameters are amount of points, receiving player and the type-ID of the given point
@@ -41,8 +39,6 @@ public class NPCManager : MonoBehaviour
 
     void Awake() 
     {
-        // _npcSpawnPositions = transform.Find("NPCSpawns").gameObject.GetChildrenWithTag("NPCSpawn").Select(g => g.GetComponent<NPCSpawnController>()).ToList();
-        //_flameSpawnControllers = transform.Find("FlameSpawns").gameObject.GetChildrenWithTag("FlameSpawn").Select(g => g.GetComponent<FlameSpawnController>()).ToList();
         _npcSpawnControllers = gameObject.GetComponentsInChildren<NPCSpawnController>().ToList();
         _flameSpawnControllers = gameObject.GetComponentsInChildren<FlameSpawnController>().ToList();
 

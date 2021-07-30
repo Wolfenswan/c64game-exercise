@@ -21,6 +21,7 @@ public class PlayerController : EntityController
     public event Action<Vector2, PlayerController> MoveOtherPlayerEvent;
     public event Action<PlayerController> PlayerDisabledEvent;
     
+    [Header("PlayerController")]
     [SerializeField] PlayerData _data;
     
     PlayerInput _playerInput;
@@ -103,11 +104,12 @@ public class PlayerController : EntityController
             new PlayerSlideState(PlayerStateID.SLIDE, this, AnimationHash.Slide),
             new PlayerDieState(PlayerStateID.DIE, this, AnimationHash.Die),
         };
-        _stateMachine = new StateMachine(states, PlayerStateID.SPAWN, Debugging);
+        _stateMachine = new StateMachine(states, PlayerStateID.SPAWN, true);
     }
 
-    void OnDisable() 
+    protected override void OnDisable() 
     {
+        base.OnDisable();
         PlayerDisabledEvent?.Invoke(this); // Lets PlayerManager know to unsubscribe from all PlayerController events
     }
 
@@ -143,9 +145,10 @@ public class PlayerController : EntityController
         if (IsDie) return;
 
         if (other.gameObject.TryGetComponent<EnemyController>(out EnemyController enemy) && enemy.CanKillPlayer)
-        {          
-            if (Debugging)
-                Debug.Log($"{this} touching {enemy}.");
+        {   
+            DebugRaiseEvent($"{this} touching {enemy}.");
+            //if (IsDebugging)
+                //Debug.Log($"{this} touching {enemy}.");
 
             if (enemy.IsFlipped)
                 EnemyKillEvent?.Invoke(enemy, this);
@@ -155,16 +158,14 @@ public class PlayerController : EntityController
         
         if (other.gameObject.TryGetComponent<CoinController>(out CoinController coin) && coin.CanBeCollected)
         {
-            if (Debugging)
-                Debug.Log($"{this} touching {coin}.");
+            DebugRaiseEvent($"touching {coin}.");
 
             TryCoinCollectEvent?.Invoke(coin, this);
         }
 
         if (other.gameObject.TryGetComponent<FlameController>(out FlameController flame) && flame.DoesHurt)
         {
-            if (Debugging)
-                Debug.Log($"{this} touching {flame}.");
+            DebugRaiseEvent($"touching {flame}.");
                   
             Die();
         }
@@ -187,15 +188,15 @@ public class PlayerController : EntityController
             {
                 if (ent.TryGetComponent<CoinController>(out CoinController coin))
                 {
-                    if (Debugging) Debug.Log($"{this} tries to collect {coin}");
+                    DebugRaiseEvent($"{this} tries to collect {coin}");
                     TryCoinCollectEvent?.Invoke(coin, this);
                 } else if(ent.TryGetComponent<EnemyController>(out EnemyController enemy))
                 {   
-                    if (Debugging) Debug.Log($"{this} tries to flip {enemy}");
+                    DebugRaiseEvent($"{this} tries to flip {enemy}");
                     TryNPCFlipEvent?.Invoke(enemy, this);
                 } else if(ent.TryGetComponent<PlayerController>(out PlayerController otherPlayer))
                 {
-                    if (Debugging) Debug.Log($"{this} tries to bounce {otherPlayer}"); 
+                    DebugRaiseEvent($"{this} tries to bounce {otherPlayer}"); 
 
                     // Hitting another player from below can cause that player to execute a smaller jump (hop)
                     if (otherPlayer.CanHop) HopOtherPlayerEvent?.Invoke(otherPlayer, Pos);
@@ -218,7 +219,7 @@ public class PlayerController : EntityController
 
         if (canPOW)
         {
-            if (Debugging) Debug.Log($"POW activated by {this}");
+            DebugRaiseEvent($"POW activated by {this}");
             PowTriggeredEvent?.Invoke(this);
             StartCoroutine(PowCooldown());
         }
@@ -226,8 +227,7 @@ public class PlayerController : EntityController
 
     void ResolveFrontalPlayerBounce(PlayerController otherPC)
     {   
-        if (Debugging)
-            Debug.Log($"Player #{ID}({CurrentStateID}), facing {Facing} bounced off player #{otherPC.ID}({otherPC.CurrentStateID}), facing {otherPC.Facing}.");
+        DebugRaiseEvent($"Player #{ID}({CurrentStateID}), facing {Facing} bounced off player #{otherPC.ID}({otherPC.CurrentStateID}), facing {otherPC.Facing}.");
         
         if (IsMove || IsSlide)
         {   
@@ -309,8 +309,8 @@ public class PlayerController : EntityController
     IEnumerator RespawnTimer()
     {   
         //* Consider alternative: use a WaitUntil for player to be out of camera or combine them; so it's waitUntil, then waitForSeconds
-        if (Debugging)
-            Debug.Log($"{this} dies and has now {PlayerValues.Lives} lives left.");
+        DebugRaiseEvent($"{this} dies and has now {PlayerValues.Lives} lives left.");
+
         yield return new WaitForSeconds(_data.RespawnDelay);
         if (PlayerValues.Lives > 0)
             PlayerRespawnEvent.Invoke(this);
@@ -324,11 +324,11 @@ public class PlayerController : EntityController
         var tick = Time.time;
         StartCoroutine(InputBuffer());
         yield return new WaitUntil(() => _controlsEnabled && _mainCollider != null && _stateMachine != null); // The null checks are safety measures to make sure Player Object has been fully initialized
-        if (Debugging) Debug.Log($"{this} player controls free.");
+        DebugRaiseEvent($"{this} player controls free.");
         _stateMachine.ForceState(PlayerStateID.SPAWN);
         //_mainCollider.enabled = false;
         yield return new WaitUntil(() => !IsSpawn);
-        if (Debugging) Debug.Log($"{this} unlocked.");
+        DebugRaiseEvent($"{this} unlocked.");
         //_mainCollider.enabled = true;
     }
 

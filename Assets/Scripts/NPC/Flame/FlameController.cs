@@ -33,7 +33,7 @@ public class FlameController : NPCController
             new FlameSpawnState(FlameStateID.SPAWN, this, AnimationHash.Spawn, doesHurt:false),
             new FlameDespawnState(FlameStateID.DESPAWN, this, AnimationHash.Despawn, doesHurt:false),
         };
-        _stateMachine = new StateMachine(states, FlameStateID.SPAWN, Debugging);
+        _stateMachine = new StateMachine(states, FlameStateID.SPAWN, true);
     }
 
     void OnEnable() 
@@ -41,8 +41,9 @@ public class FlameController : NPCController
         _gfxController.AnimationFinishedEvent += GFX_AnimationFinishedEvent;
     }
 
-    void OnDisable() 
+    protected override void OnDisable() 
     {
+        base.OnDisable();
         _gfxController.AnimationFinishedEvent -= GFX_AnimationFinishedEvent;
     }
 
