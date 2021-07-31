@@ -3,11 +3,26 @@ using System.Collections.Generic;
 using NEINGames.Singleton;
 using TMPro;
 
+/*
+DebugManager globally manages all debugging output (to console and by monitoring through in-scene text fields)
+It is created as a singleton and will remain active throughout scenes.
+
+Objects/Instances can communicate with the DebugManager through the events defined in IDebugMonitor.
+Objects/Instances have to register to the DebugManager through DebugManager.Instance.RegisterObject;
+Objects/Instances can deregister from the DebugManager through DebugManager.Instance.DeregisterObject;
+
+The default event - DebugEvent - uses DebugEventArgs as event-arguments. IDebugMonitor also defines a number of short-hands for common use-cases.
+See IDebugMonitor for a list of events and usage examples.
+
+Monitoring to a text-field is optional. The text-field to output to can be passed to the DebugManager when first registering the object.
+The static method DebugManager.CreateTextField can be used to instantiate a textField based on a template-object.
+*/
+
 public class DebugManager : Singleton<DebugManager>
 {
-    [SerializeField, Tooltip("If false any debug output is disabled, including those events overriding the log-level filter.")] bool _debugEnabled = true;
-    [SerializeField, Tooltip("Specifies the highest logging level to display. Debug output will still show if overriden by individual events.")] DebugLogLevel _debugMaxLogLevel = DebugLogLevel.NORMAL;
-    [SerializeField, Tooltip("Specifies the template to base monitoring fields on. Can be null.")] GameObject _textFieldTemplate = null;
+    [Tooltip("If false any debug output is disabled, including those events overriding the log-level filter.")] public bool DebugEnabled = true;
+    [Tooltip("Specifies the highest logging level to display. Debug output will still show if overriden by individual events.")] public DebugLogLevel DebugMaxLogLevel = DebugLogLevel.NORMAL;
+    [Tooltip("Specifies the template to base monitoring fields on. Can be null.")] public GameObject TextFieldTemplate = null;
 
     Dictionary<object, DebugMonitoredObject> _monitoredObjects = new Dictionary<object, DebugMonitoredObject>();
 
@@ -18,7 +33,7 @@ public class DebugManager : Singleton<DebugManager>
 
     public void RegisterObject<T>(T monitoredInstance, string titleText, DebugLogLevel maxLogLevel, TextMeshPro textField = null) where T : IDebugMonitor
     {   
-        if(!_debugEnabled) return;
+        if(!DebugEnabled) return;
 
         if (_monitoredObjects.ContainsKey(monitoredInstance))
         {
@@ -64,7 +79,7 @@ public class DebugManager : Singleton<DebugManager>
         
         if (_monitoredObjects.TryGetValue(sender, out DebugMonitoredObject debugObjectData))
         {   
-            if (!debugEventArgs.OverrideLogLevelRestrictions && (logLevel > debugObjectData.MaxLogLevel || logLevel > _debugMaxLogLevel))
+            if (!debugEventArgs.OverrideLogLevelRestrictions && (logLevel > debugObjectData.MaxLogLevel || logLevel > DebugMaxLogLevel))
                 return;
 
             if (logToText && !debugObjectData.HasTextField)
@@ -142,7 +157,7 @@ public class DebugManager : Singleton<DebugManager>
     // TODO deliberate if this needs to be static
     public static TextMeshPro CreateTextFieldContainer(GameObject parent, Vector3 localPosition)
     {   
-        var template = DebugManager.Instance._textFieldTemplate;
+        var template = DebugManager.Instance.TextFieldTemplate;
 
         if (template == null)
         {
