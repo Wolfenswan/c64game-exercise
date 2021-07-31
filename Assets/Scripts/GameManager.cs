@@ -70,6 +70,12 @@ public class GameManager : Singleton<GameManager>
         // TODO
         // play jingle?
         // change to highscore screen
+        Debug.LogWarning("Game over!");
+    }
+
+    void CameraShake()
+    {
+
     }
 
     void TogglePause(bool pauseEnabled) => Time.timeScale = pauseEnabled?0:1;

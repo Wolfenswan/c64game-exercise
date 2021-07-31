@@ -9,7 +9,6 @@ public class DebugEventArgs : EventArgs
         LogType = logType;
         OverrideLogLevelRestrictions = overrideLogLevelRestrictions;
     }
-
     public string DebugText{get; private set;}
     public DebugLogLevel LogLevel{get; private set;}
     public DebugLogType LogType{get; private set;}

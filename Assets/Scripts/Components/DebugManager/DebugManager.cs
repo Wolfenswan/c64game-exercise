@@ -18,6 +18,12 @@ Monitoring to a text-field is optional. The text-field to output to can be passe
 The static method DebugManager.CreateTextField can be used to instantiate a textField based on a template-object.
 */
 
+/* TODO
+- move to NEINTools + namespace NEINGames.Debugging
+- wrap in #IF UNITY_EDITOR?
+- (maybe; could be bloat?) add two custom events (actions): DebugListFieldsEvent & DebugListDictionaryEvent using the corresponding methods
+*/
+
 public class DebugManager : Singleton<DebugManager>
 {
     [Tooltip("If false any debug output is disabled, including those events overriding the log-level filter.")] public bool DebugEnabled = true;
