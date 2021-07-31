@@ -32,7 +32,7 @@ public abstract class EntityController : MonoBehaviour, IDebugMonitor
 
     #region debugging   
     [Header("Debugging")]
-    [SerializeField] DebugLogLevel _dbgMaxLogLevel = DebugLogLevel.ALL;
+    [SerializeField] DebugLogLevel _dbgMaxLogLevel = DebugLogLevel.NORMAL;
     [SerializeField] TextMeshPro _debugTextField;
     
     public event EventHandler<DebugEventArgs> DebugEvent;
@@ -60,7 +60,8 @@ public abstract class EntityController : MonoBehaviour, IDebugMonitor
 
     protected virtual void Start()
     {
-        DebugManager.Instance.RegisterObject<EntityController>(this, $"{this}", _dbgMaxLogLevel, _debugTextField);
+        var textField = DebugManager.CreateTextFieldContainer(gameObject, new Vector3(0,1,0));
+        DebugManager.Instance.RegisterObject<EntityController>(this, $"{this}", _dbgMaxLogLevel, textField);
     }
 
     protected virtual void OnDisable() 

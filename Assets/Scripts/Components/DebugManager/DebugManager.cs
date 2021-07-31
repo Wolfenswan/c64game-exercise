@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using NEINGames.Singleton;
 using TMPro;
 
-//* NOTE: Make entire class static instead of singleton. Create new Interface to be used with e.g. GameManager to configure the DebugManager
-
 public class DebugManager : Singleton<DebugManager>
 {
-    [SerializeField] bool _debugEnabled = true;
-    [SerializeField] DebugLogLevel _debugMaxLogLevel = DebugLogLevel.ALL;
-    [SerializeField] GameObject _textFieldTemplate;
+    [SerializeField, Tooltip("If false any debug output is disabled, including those events overriding the log-level filter.")] bool _debugEnabled = true;
+    [SerializeField, Tooltip("Specifies the highest logging level to display. Debug output will still show if overriden by individual events.")] DebugLogLevel _debugMaxLogLevel = DebugLogLevel.NORMAL;
+    [SerializeField, Tooltip("Specifies the template to base monitoring fields on. Can be null.")] GameObject _textFieldTemplate = null;
 
     Dictionary<object, DebugMonitoredObject> _monitoredObjects = new Dictionary<object, DebugMonitoredObject>();
 
@@ -20,6 +18,8 @@ public class DebugManager : Singleton<DebugManager>
 
     public void RegisterObject<T>(T monitoredInstance, string titleText, DebugLogLevel maxLogLevel, TextMeshPro textField = null) where T : IDebugMonitor
     {   
+        if(!_debugEnabled) return;
+
         if (_monitoredObjects.ContainsKey(monitoredInstance))
         {
             Debug.LogError($"{this} | Tried registering already registered object: {monitoredInstance}");
@@ -42,13 +42,16 @@ public class DebugManager : Singleton<DebugManager>
         obj.DebugWarningEvent -= OnDebugWarningEvent;
         obj.DebugErrorEvent -= OnDebugErrorEvent;
         obj.DebugTextUpdateEvent -= OnDebugTextUpdateEvent;
+        Destroy(_monitoredObjects[monitoredObject].TextField.gameObject);
         _monitoredObjects.Remove(monitoredObject);
     }
 
-    void OnDebugLogEvent(object sender, string dbgText) => LogToConsole(dbgText, _monitoredObjects[sender].TitleText, DebugLogLevel.NORMAL);
-    void OnDebugWarningEvent(object sender, string dbgText) => LogToConsole(dbgText, _monitoredObjects[sender].TitleText, DebugLogLevel.WARNING);
-    void OnDebugErrorEvent(object sender, string dbgText) => LogToConsole(dbgText, _monitoredObjects[sender].TitleText, DebugLogLevel.ERROR);
-    void OnDebugTextUpdateEvent(object sender, string dbgText) => UpdateTextMonitor(dbgText, _monitoredObjects[sender].TitleText, _monitoredObjects[sender].TextField);
+    #region shorthands
+    void OnDebugLogEvent(object sender, string dbgText) => OnDebugEvent(sender, new DebugEventArgs(dbgText, DebugLogType.CONSOLE, DebugLogLevel.NORMAL));
+    void OnDebugWarningEvent(object sender, string dbgText) => OnDebugEvent(sender, new DebugEventArgs(dbgText, DebugLogType.CONSOLE, DebugLogLevel.WARNING));
+    void OnDebugErrorEvent(object sender, string dbgText) => OnDebugEvent(sender, new DebugEventArgs(dbgText, DebugLogType.CONSOLE, DebugLogLevel.ERROR));
+    void OnDebugTextUpdateEvent(object sender, string dbgText) => OnDebugEvent(sender, new DebugEventArgs(dbgText, DebugLogType.TEXT, DebugLogLevel.NORMAL));
+    #endregion
 
     void OnDebugEvent(object sender, DebugEventArgs debugEventArgs)
     {   
@@ -58,7 +61,7 @@ public class DebugManager : Singleton<DebugManager>
 
         var logToConsole = logType == DebugLogType.CONSOLE || logType == DebugLogType.CONSOLE_AND_TEXT;
         var logToText = logType == DebugLogType.TEXT || logType == DebugLogType.CONSOLE_AND_TEXT;
-
+        
         if (_monitoredObjects.TryGetValue(sender, out DebugMonitoredObject debugObjectData))
         {   
             if (!debugEventArgs.OverrideLogLevelRestrictions && (logLevel > debugObjectData.MaxLogLevel || logLevel > _debugMaxLogLevel))
@@ -77,10 +80,10 @@ public class DebugManager : Singleton<DebugManager>
                     LogToConsole(dbgText, titleText, logLevel);
                     break;
                 case DebugLogType.TEXT:
-                    UpdateTextMonitor(dbgText, titleText, debugObjectData.TextField);
+                    UpdateTextMonitor(dbgText, titleText, debugObjectData.TextField, logLevel);
                     break;
                 case DebugLogType.CONSOLE_AND_TEXT:
-                    UpdateTextMonitor(dbgText, titleText, debugObjectData.TextField);
+                    UpdateTextMonitor(dbgText, titleText, debugObjectData.TextField, logLevel);
                     LogToConsole(dbgText, titleText, logLevel);
                     break;
                 default:
@@ -99,9 +102,6 @@ public class DebugManager : Singleton<DebugManager>
 
         switch (logLevel)
         {
-            case DebugLogLevel.ALL:
-                Debug.Log(output);
-                break;
             case DebugLogLevel.NORMAL:
                 Debug.Log(output);
                 break;
@@ -117,9 +117,25 @@ public class DebugManager : Singleton<DebugManager>
         }
     }
 
-    void UpdateTextMonitor(string dbgText, string titleText, TextMeshPro textField)
+    void UpdateTextMonitor(string dbgText, string titleText, TextMeshPro textField, DebugLogLevel logLevel)
     {
-        //* Idea for later: use log level for different colorings of text
+        Color color;
+        switch (logLevel)
+        {
+            case DebugLogLevel.NORMAL:
+                color = Color.white;
+                break;
+            case DebugLogLevel.WARNING:
+                color = Color.yellow;
+                break;
+            case DebugLogLevel.ERROR:
+                color = Color.red;
+                break;
+            default:
+                Debug.LogWarning($"{this} | Unknown LogLevel: {logLevel}.");
+                break;
+
+        }
         textField.text = $"{titleText}\n{dbgText}";
     }
 
@@ -130,7 +146,7 @@ public class DebugManager : Singleton<DebugManager>
 
         if (template == null)
         {
-            // TODO Raise Exception -> no template for the textfield has been defined
+            Debug.LogError($"GameManager.CreateTextFieldContainer | Trying to create text-field but no template has been defined.");
             return null;
         }
 
