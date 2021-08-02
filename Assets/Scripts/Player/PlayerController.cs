@@ -7,14 +7,15 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : EntityController
 {   
-    // Static events subscribed to by classes unaware of the individual player objects (e.g. Enemy- & CoinController)
+    // Static events subscribed to by classes unaware of the individual player objects (e.g. NPCManager)
     public static event Action<EnemyController, PlayerController> TryNPCFlipEvent; // Let subscribers know this enemy has been flipped
     public static event Action<EnemyController, PlayerController> EnemyKillEvent; // Let subscribers know this enemy has been killed
     public static event Action<CoinController, PlayerController> TryCoinCollectEvent; // Let subscribers know this coin has been collected
     public static event Action<PlayerController> PowTriggeredEvent; // Let subscribers know that POW has been triggered and by whom
 
     // Non-static events subscribed to by objects aware of the individual player objects (PlayerStates and PlayerManager)
-    public event Action JumpEvent;
+    public event Action JumpButtonEvent;
+    public event Action MenuButtonEvent; // What the start button does specifically is handled by PlayerManager which raises the corresponding followup event
     public event Action<PlayerController, Vector2> HopOtherPlayerEvent; //Sends hit player and contact point
     public event Action<PlayerController> PlayerRespawnEvent;
     public event Action<PlayerController> PlayerDeadEvent;
@@ -24,18 +25,17 @@ public class PlayerController : EntityController
     [Header("PlayerController")]
     [SerializeField] PlayerData _data;
     
-    PlayerInput _playerInput;
-    
     BoxCollider2D _mainCollider;
 
 
-    #region public field accessors
+    #region public fields
     public PlayerID ID {get => PlayerValues.ID;}
     public int IDInt {get => PlayerValues.IDInt;}
     public PlayerData Data{get => _data;}
     public PlayerStateID CurrentPlayerStateID{get => (PlayerStateID) CurrentStateID;}
     public PlayerValues PlayerValues{get; private set;}
-    public int MovementInput{get;private set;}
+    public int MovementInput{get;private set;} // Updated via event sent from the Input system and read by the Player States
+    public int LivesLeft{get => PlayerValues.Lives;}
     #endregion
 
     #region state check shorthands
@@ -78,8 +78,6 @@ public class PlayerController : EntityController
     protected override void Awake() 
     {   
         base.Awake();
-
-        _playerInput = GetComponent<PlayerInput>();
         _mainCollider = GetComponent<BoxCollider2D>();
 
         _gfxController.SetSpriteColor(_data.AvailableColors[IDInt]);
@@ -107,9 +105,8 @@ public class PlayerController : EntityController
         _stateMachine = new StateMachine(states, PlayerStateID.SPAWN, true);
     }
 
-    protected override void OnDisable() 
+    void OnDisable() 
     {
-        base.OnDisable();
         PlayerDisabledEvent?.Invoke(this); // Lets PlayerManager know to unsubscribe from all PlayerController events
     }
 
@@ -134,8 +131,14 @@ public class PlayerController : EntityController
 
     public void OnJump(InputAction.CallbackContext ctx)
     {     
-        if (_controlsEnabled && ctx.performed) JumpEvent?.Invoke();
-    } 
+        if (_controlsEnabled && ctx.performed) JumpButtonEvent?.Invoke();
+    }
+
+    public void OnMenu(InputAction.CallbackContext ctx)
+    {   
+        if (_controlsEnabled && ctx.performed)
+            MenuButtonEvent?.Invoke();
+    }
     #endregion
 
     #region collisions
@@ -146,9 +149,7 @@ public class PlayerController : EntityController
 
         if (other.gameObject.TryGetComponent<EnemyController>(out EnemyController enemy) && enemy.CanKillPlayer)
         {   
-            DebugRaiseEvent($"{this} touching {enemy}.");
-            //if (IsDebugging)
-                //Debug.Log($"{this} touching {enemy}.");
+            RaiseDebugEvent($"{this} touching {enemy}.");
 
             if (enemy.IsFlipped)
                 EnemyKillEvent?.Invoke(enemy, this);
@@ -158,14 +159,14 @@ public class PlayerController : EntityController
         
         if (other.gameObject.TryGetComponent<CoinController>(out CoinController coin) && coin.CanBeCollected)
         {
-            DebugRaiseEvent($"touching {coin}.");
+            RaiseDebugEvent($"touching {coin}.");
 
             TryCoinCollectEvent?.Invoke(coin, this);
         }
 
         if (other.gameObject.TryGetComponent<FlameController>(out FlameController flame) && flame.DoesHurt)
         {
-            DebugRaiseEvent($"touching {flame}.");
+            RaiseDebugEvent($"touching {flame}.");
                   
             Die();
         }
@@ -188,15 +189,15 @@ public class PlayerController : EntityController
             {
                 if (ent.TryGetComponent<CoinController>(out CoinController coin))
                 {
-                    DebugRaiseEvent($"{this} tries to collect {coin}");
+                    RaiseDebugEvent($"{this} tries to collect {coin}");
                     TryCoinCollectEvent?.Invoke(coin, this);
                 } else if(ent.TryGetComponent<EnemyController>(out EnemyController enemy))
                 {   
-                    DebugRaiseEvent($"{this} tries to flip {enemy}");
+                    RaiseDebugEvent($"{this} tries to flip {enemy}");
                     TryNPCFlipEvent?.Invoke(enemy, this);
                 } else if(ent.TryGetComponent<PlayerController>(out PlayerController otherPlayer))
                 {
-                    DebugRaiseEvent($"{this} tries to bounce {otherPlayer}"); 
+                    RaiseDebugEvent($"{this} tries to bounce {otherPlayer}"); 
 
                     // Hitting another player from below can cause that player to execute a smaller jump (hop)
                     if (otherPlayer.CanHop) HopOtherPlayerEvent?.Invoke(otherPlayer, Pos);
@@ -219,7 +220,7 @@ public class PlayerController : EntityController
 
         if (canPOW)
         {
-            DebugRaiseEvent($"POW activated by {this}");
+            RaiseDebugEvent($"POW activated by {this}");
             PowTriggeredEvent?.Invoke(this);
             StartCoroutine(PowCooldown());
         }
@@ -227,7 +228,7 @@ public class PlayerController : EntityController
 
     void ResolveFrontalPlayerBounce(PlayerController otherPC)
     {   
-        DebugRaiseEvent($"Player #{ID}({CurrentStateID}), facing {Facing} bounced off player #{otherPC.ID}({otherPC.CurrentStateID}), facing {otherPC.Facing}.");
+        RaiseDebugEvent($"Player #{ID}({CurrentStateID}), facing {Facing} bounced off player #{otherPC.ID}({otherPC.CurrentStateID}), facing {otherPC.Facing}.");
         
         if (IsMove || IsSlide)
         {   
@@ -273,6 +274,7 @@ public class PlayerController : EntityController
 
     public void AddPoints(int points, PointTypeID type)
     {   
+        RaiseDebugEvent($"Gained {points}pts.");
         if (_data.PointTypesMultiplied[type])
         {
             if (Time.time - _lastPointAdditionTimestamp < _data.PointMultiplierResetAfter)
@@ -281,6 +283,8 @@ public class PlayerController : EntityController
                 _pointMultiplier = 1;
 
             points*=_pointMultiplier;
+
+            RaiseDebugEvent($"With multipl x {_pointMultiplier} = {points}");
 
             _lastPointAdditionTimestamp = Time.time;
         }
@@ -309,7 +313,7 @@ public class PlayerController : EntityController
     IEnumerator RespawnTimer()
     {   
         //* Consider alternative: use a WaitUntil for player to be out of camera or combine them; so it's waitUntil, then waitForSeconds
-        DebugRaiseEvent($"{this} dies and has now {PlayerValues.Lives} lives left.");
+        RaiseDebugEvent($"{this} dies and has now {PlayerValues.Lives} lives left.");
 
         yield return new WaitForSeconds(_data.RespawnDelay);
         if (PlayerValues.Lives > 0)
@@ -324,11 +328,11 @@ public class PlayerController : EntityController
         var tick = Time.time;
         StartCoroutine(InputBuffer());
         yield return new WaitUntil(() => _controlsEnabled && _mainCollider != null && _stateMachine != null); // The null checks are safety measures to make sure Player Object has been fully initialized
-        DebugRaiseEvent($"{this} player controls free.");
+        RaiseDebugEvent($"{this} player controls free.");
         _stateMachine.ForceState(PlayerStateID.SPAWN);
         //_mainCollider.enabled = false;
         yield return new WaitUntil(() => !IsSpawn);
-        DebugRaiseEvent($"{this} unlocked.");
+        RaiseDebugEvent($"{this} unlocked.");
         //_mainCollider.enabled = true;
     }
 

@@ -26,7 +26,7 @@ public abstract class PlayerState : State
         _gravityVector = GameManager.Instance.Data.GravityVector; // TODO move to constructor once final
 
         _doJump = false;
-        _player.JumpEvent += Player_JumpEvent;
+        _player.JumpButtonEvent += Player_JumpEvent;
         _gfxController.AnimationFinishedEvent += GFX_AnimationFinishedEvent;
 
         if (_animationHash != null)
@@ -36,7 +36,7 @@ public abstract class PlayerState : State
     
     public override void OnExit(Enum toState) 
     {
-        _player.JumpEvent -= Player_JumpEvent;
+        _player.JumpButtonEvent -= Player_JumpEvent;
         _gfxController.AnimationFinishedEvent -= GFX_AnimationFinishedEvent;
     }
 

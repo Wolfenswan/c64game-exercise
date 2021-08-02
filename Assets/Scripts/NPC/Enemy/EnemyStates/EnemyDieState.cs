@@ -19,7 +19,6 @@ public class EnemyDieState : EnemyState
         _velocityVector = _entity.Data.DieVector; // TODO move to constructor once final
 
         var angle = Vector2Utilities.GetDegreesBetweenVectors(_entity.EventContactVector, _entity.Pos);
-        Debug.Log(angle);
         //! TODO add facing-adjustment
     }
 

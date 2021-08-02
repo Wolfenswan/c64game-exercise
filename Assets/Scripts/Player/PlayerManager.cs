@@ -10,6 +10,8 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     public event Action<PlayerController> NewPlayerJoinedEvent;
     public event Action AllPlayersKilledEvent;
     public event Action PlayersTriggerPowEvent;
+    public event Action PromptPauseEvent;
+    public event Action PlayerContinueEvent;
 
     List<Transform> _playerSpawnPositions;
     List<Transform> _playerRespawnPositions;
@@ -17,6 +19,8 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     bool _canJoin = true;
     // Dictionary<int, PlayerController> _activePlayers = new Dictionary<int, PlayerController>();
     List<PlayerController> _activePlayers = new List<PlayerController>();
+
+    public int PlayerCount{get => _activePlayers.Count;}
 
     void Awake() 
     {
@@ -84,6 +88,7 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
         pc.MoveOtherPlayerEvent += Player_MoveOtherPlayerEvent;
         pc.HopOtherPlayerEvent += Player_HopOtherPlayerEvent;
         pc.PlayerDisabledEvent += Player_PlayerDisabledEvent;
+        pc.MenuButtonEvent += Player_StartButtonEvent;
     }
 
     void DesubscribeFromPlayerEvents(PlayerController pc)
@@ -93,6 +98,7 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
         pc.MoveOtherPlayerEvent -= Player_MoveOtherPlayerEvent;
         pc.HopOtherPlayerEvent -= Player_HopOtherPlayerEvent;
         pc.PlayerDisabledEvent -= Player_PlayerDisabledEvent;
+        pc.MenuButtonEvent -= Player_StartButtonEvent;
     }
 
     void GameManager_LevelChangeEvent(LevelData data)
@@ -133,9 +139,9 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
     {
         //player.gameObject.SetActive(false);
         _activePlayers.Remove(player);
+
+        // TODO before destroying: wait for continue prompt
         Destroy(player.gameObject);
-        
-        //! IDEA show "continue?" prompt on UI
 
         if (_activePlayers.Count == 0)
             AllPlayersKilledEvent?.Invoke();
@@ -147,5 +153,10 @@ public class PlayerManager : Singleton<PlayerManager> // TODO probably does not 
 
         // TODO test if object should be destroyed;
         // needs testing how PlayerInput registers rejoining etc.
+    }
+
+    void Player_StartButtonEvent()
+    {
+        PromptPauseEvent?.Invoke();
     }
 }

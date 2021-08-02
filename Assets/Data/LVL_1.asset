@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LevelID: 1
   EnemiesToSpawn:
-  - Prefab: {fileID: 3921355701878195132, guid: 10df5db4f767519488de018769627458, type: 3}
+  - Prefab: {fileID: 3128169300596379228, guid: 3d988ca85df67af499c9de8bfa2047b9, type: 3}
     Count: 3
   BonusStage: 0

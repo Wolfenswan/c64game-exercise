@@ -2,7 +2,7 @@
     "name": "PlayerControls",
     "maps": [
         {
-            "name": "PlayerMovement",
+            "name": "PlayerControls",
             "id": "a5c825af-3f71-4730-ac99-f2b983e5568f",
             "actions": [
                 {
@@ -17,6 +17,14 @@
                     "name": "jump",
                     "type": "Button",
                     "id": "406a5c39-7925-4533-929d-02a21501b70a",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "menu",
+                    "type": "Button",
+                    "id": "b39c7aee-87ee-42da-8cb2-e9fdf09e31d0",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
@@ -108,6 +116,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "69c7627d-fdba-4a5c-93ce-a915871333e8",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "menu",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b2b80a2b-9d06-40c5-b5d9-f822e843d76d",
+                    "path": "<Gamepad>/start",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "menu",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

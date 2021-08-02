@@ -104,7 +104,7 @@ public class EnemyFlippedState : EnemyState
 
     void StartOwnTransitionToMove()
     {
-        _entity.DebugRaiseEvent($"{_entity} returning to move on its own.");
+        _entity.RaiseDebugEvent($"{_entity} returning to move on its own.");
 
         _returningToMove = true;
         _gfxController.ChangeAnimation((int) _exitAnimation);

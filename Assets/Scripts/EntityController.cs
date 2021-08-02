@@ -33,7 +33,6 @@ public abstract class EntityController : MonoBehaviour, IDebugMonitor
     #region debugging   
     [Header("Debugging")]
     [SerializeField] DebugLogLevel _dbgMaxLogLevel = DebugLogLevel.NORMAL;
-    [SerializeField] TextMeshPro _debugTextField;
     
     public event EventHandler<DebugEventArgs> DebugEvent;
     public event Action<object, string> DebugLogEvent;
@@ -41,7 +40,7 @@ public abstract class EntityController : MonoBehaviour, IDebugMonitor
     public event Action<object, string> DebugErrorEvent;
     public event Action<object, string> DebugTextUpdateEvent;
 
-    public void DebugRaiseEvent(string debugText, DebugLogType logType = DebugLogType.CONSOLE, DebugLogLevel logLevel = DebugLogLevel.NORMAL, bool overrideLogLevelRestrictions = false)
+    public void RaiseDebugEvent(string debugText, DebugLogType logType = DebugLogType.CONSOLE, DebugLogLevel logLevel = DebugLogLevel.NORMAL, bool overrideLogLevelRestrictions = false)
     {
         var args = new DebugEventArgs(debugText, logType, logLevel);
         DebugEvent?.Invoke(this, args);
@@ -64,7 +63,7 @@ public abstract class EntityController : MonoBehaviour, IDebugMonitor
         DebugManager.Instance.RegisterObject<EntityController>(this, $"{this}", _dbgMaxLogLevel, textField);
     }
 
-    protected virtual void OnDisable() 
+    protected virtual void OnDestroy() 
     {
         DebugManager.Instance.DeregisterObject(this);
     }

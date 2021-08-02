@@ -63,7 +63,7 @@ public class DebugManager : Singleton<DebugManager>
         obj.DebugWarningEvent -= OnDebugWarningEvent;
         obj.DebugErrorEvent -= OnDebugErrorEvent;
         obj.DebugTextUpdateEvent -= OnDebugTextUpdateEvent;
-        Destroy(_monitoredObjects[monitoredObject].TextField.gameObject);
+        if (_monitoredObjects.TryGetValue(monitoredObject, out DebugMonitoredObject data) && data.HasTextField) Destroy(data.TextField.gameObject);
         _monitoredObjects.Remove(monitoredObject);
     }
 

@@ -6,7 +6,7 @@ public class FlameSpawnState : FlameState
 
     public override Enum Tick()
     {
-        if (_runTime > 2f)
+        if (_runTime > 2f) // TODO can later use finished animation event
             return FlameStateID.MOVE;
 
         return null;

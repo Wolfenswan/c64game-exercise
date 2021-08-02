@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de7b81b8c5c1dc14782c53a021f87000, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  SpawnDelay: 1
+  SpawnDelay: 3
   GravityVector: {x: 0, y: -6}
   Levels:
   - {fileID: 11400000, guid: 9761c38733fa02a47aa190c46f0ca229, type: 2}
+  CameraShakeStrength: 2
+  CameraShakeSpeed: 10
+  InfinitePow: 0

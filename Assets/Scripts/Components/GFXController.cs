@@ -45,7 +45,18 @@ public class GFXController : MonoBehaviour {
         _spriteRenderer.color = color;
     } 
 
-    public void SetAnimatorFloat(string name, float value) => _animator.SetFloat(name, value);
+    public void SetAnimatorVariable(string name, dynamic value) 
+    {
+        var type = value.GetType();
+        if (type == typeof(bool))
+            _animator.SetBool(name, value);
+        else if (type == typeof(int))
+            _animator.SetInteger(name, value);
+        else if (type == typeof(float))
+            _animator.SetFloat(name, value);
+        else
+            Debug.LogWarning($"Unknown value type {value.GetType()}");
+    }
 
     void RaiseAnimationStartedEvent(AnimationEvent animEvent) {
         int animHash = animEvent.animatorStateInfo.shortNameHash;

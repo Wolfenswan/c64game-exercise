@@ -4,6 +4,7 @@
 // Live tracker (below name)
 // Show multiplier???
 
+using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -19,18 +20,27 @@ public class PlayerUIController : MonoBehaviour
     public PlayerID PlayerID {get => _playerID;}
 
     string _playerName;
+    bool _continueCountdown = false;
 
     void Awake() 
     {
         _playerName = _playerNameUI.text;
-        ResetUIText();
+        ResetUI();
     }
 
-    void ResetUIText()
+    void ResetUI()
     {   
         _playerNameUI.text = _playerHasNotJoinedText;
         _livesUI.text = "";
         _scoreUI.text = "";
+    }
+
+    void SetGameOverUI()
+    {   
+        StartCoroutine(ContinueCountdown());
+        // TODO show Continue? prompt and countdown?
+        // TODO after countdown -> ResetUi()
+        _scoreUI.text = $"Final {_scoreUI.text}"; // Displays Final Score nnn ... 
     }
 
     public void UpdateScore(int newScore)
@@ -47,7 +57,17 @@ public class PlayerUIController : MonoBehaviour
         _livesUI.text = $"Lives: {liveCount}";
 
         if (liveCount == 0)
-            ResetUIText();
+            SetGameOverUI();
+    }
+
+    IEnumerator ContinueCountdown()
+    {
+        // TODO implement text update
+        // TODO can be interrupted if player rejoins
+        _continueCountdown = true;
+        yield return new WaitForSecondsRealtime(1f);
+        _continueCountdown = false;
+        ResetUI();
     }
 }
 
